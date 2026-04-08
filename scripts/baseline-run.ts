@@ -3,35 +3,35 @@ import path from "node:path";
 import { performance } from "node:perf_hooks";
 import { parsePrdToSchema } from "../packages/parser/src/index.js";
 import { generateFrontend } from "../packages/codegen/src/json-to-ui.js";
+import { createStructuredLogger } from "../packages/planner/src/logger.js";
 
 const repoRoot = process.env.INIT_CWD ?? process.cwd();
 const inputPath = path.resolve(repoRoot, "input/prd.md");
 const outputDir = path.resolve(repoRoot, "output");
 const structurePath = path.resolve(outputDir, "structure.json");
 const frontendSchemaPath = path.resolve(repoRoot, "apps/web-preview/lib/structure.json");
+const totalStart = performance.now();
+const logger = createStructuredLogger();
 
-interface StageMetric {
-  name: string;
-  duration_ms: number;
-}
-
-const metrics: StageMetric[] = [];
-
-const runStage = <T>(name: string, task: () => T): T => {
-  const stageStart = performance.now();
-  const result = task();
-  const duration = performance.now() - stageStart;
-  metrics.push({ name, duration_ms: Number(duration.toFixed(2)) });
-  return result;
+const runStage = <T>(phase: string, task: () => T): T => {
+  const context = logger.startPhase(phase);
+  try {
+    const result = task();
+    logger.endPhase(context);
+    return result;
+  } catch (error) {
+    logger.failPhase(context, "BASELINE_STAGE_FAILED", error);
+    throw error;
+  }
 };
 
-const totalStart = performance.now();
-
 if (!fs.existsSync(inputPath)) {
+  logger.error("baseline", `Missing PRD file: ${path.relative(repoRoot, inputPath)}`, "BASELINE_INPUT_MISSING");
   throw new Error(`Missing PRD file: ${path.relative(repoRoot, inputPath)}`);
 }
 
 fs.mkdirSync(outputDir, { recursive: true });
+logger.info("baseline", "baseline_started", { input: path.relative(repoRoot, inputPath) });
 
 const schema = runStage("prd_parser", () => {
   const markdown = fs.readFileSync(inputPath, "utf8");
@@ -44,31 +44,37 @@ runStage("ui_generator", () => {
   generateFrontend(schema);
 });
 
-const totalMs = Number((performance.now() - totalStart).toFixed(2));
-const report = {
-  executed_at: new Date().toISOString(),
-  input: path.relative(repoRoot, inputPath),
-  outputs: [path.relative(repoRoot, structurePath), "apps/web-preview/*"],
-  stages: metrics,
-  total_duration_ms: totalMs
-};
-
-fs.writeFileSync(path.resolve(outputDir, "baseline-run-stats.json"), `${JSON.stringify(report, null, 2)}\n`);
-
 if (!fs.existsSync(structurePath)) {
+  logger.error(
+    "baseline",
+    `Baseline failed: missing ${path.relative(repoRoot, structurePath)}`,
+    "BASELINE_STRUCTURE_MISSING"
+  );
   throw new Error(`Baseline failed: missing ${path.relative(repoRoot, structurePath)}`);
 }
 
 if (!fs.existsSync(frontendSchemaPath)) {
+  logger.error(
+    "baseline",
+    `Baseline failed: missing ${path.relative(repoRoot, frontendSchemaPath)}`,
+    "BASELINE_FRONTEND_SCHEMA_MISSING"
+  );
   throw new Error(`Baseline failed: missing ${path.relative(repoRoot, frontendSchemaPath)}`);
 }
 
-console.log("✅ Baseline run completed");
-console.log(`- input: ${path.relative(repoRoot, inputPath)}`);
-console.log(`- structure: ${path.relative(repoRoot, structurePath)}`);
-console.log("- frontend: apps/web-preview/*");
-console.log("- stage durations (ms):");
-for (const metric of metrics) {
-  console.log(`  • ${metric.name}: ${metric.duration_ms}`);
-}
-console.log(`- total: ${totalMs} ms`);
+const totalMs = Number((performance.now() - totalStart).toFixed(2));
+logger.info("baseline", "baseline_completed", {
+  outputs: [path.relative(repoRoot, structurePath), "apps/web-preview/*"],
+  total_duration_ms: totalMs
+});
+
+const report = {
+  executed_at: new Date().toISOString(),
+  trace_id: logger.traceId,
+  input: path.relative(repoRoot, inputPath),
+  outputs: [path.relative(repoRoot, structurePath), "apps/web-preview/*"],
+  total_duration_ms: totalMs,
+  events: logger.events
+};
+
+fs.writeFileSync(path.resolve(outputDir, "baseline-run-stats.json"), `${JSON.stringify(report, null, 2)}\n`);
