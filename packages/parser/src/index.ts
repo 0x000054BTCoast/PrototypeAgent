@@ -85,6 +85,17 @@ export type ParsedPrdAst = {
   sections: SectionAst[];
 };
 
+export type SchemaTraceEntry = {
+  sourceLine: number;
+  schemaPath: string;
+  detail?: string;
+};
+
+export type AstToSchemaResult = {
+  schema: UISchema;
+  trace: SchemaTraceEntry[];
+};
+
 type InferComponentContext = {
   sectionName: string;
   nodeType: AstNode['type'];
@@ -520,6 +531,12 @@ const collectNodeTexts = (node: AstNode): string[] => {
   return [node.text];
 };
 
+const collectNodeTextEntries = (node: AstNode): Array<{ text: string; line: number }> => {
+  if (node.type === 'list') return node.items.map((item) => ({ text: item.text, line: item.line }));
+  if (node.type === 'heading') return [{ text: node.text, line: node.line }];
+  return [{ text: node.text, line: node.startLine }];
+};
+
 const EVENT_PATTERNS: Array<{ type: string; pattern: RegExp }> = [
   { type: 'click', pattern: /\b(click|tap|press)\b/i },
   { type: 'submit', pattern: /\b(submit|save|confirm)\b/i },
@@ -615,23 +632,43 @@ const inferInteractions = (
 };
 
 export const parsePrdToSchema = (markdown: string): UISchema => {
-  const parsed = parsePrdToAst(markdown);
+  return astToSchema(parsePrdToAst(markdown)).schema;
+};
+
+export const astToSchema = (parsed: ParsedPrdAst): AstToSchemaResult => {
   let componentIndex = 0;
+  const trace: SchemaTraceEntry[] = [];
+  const pushTrace = (sourceLine: number, schemaPath: string, detail?: string): void => {
+    if (sourceLine <= 0) return;
+    trace.push({ sourceLine, schemaPath, detail });
+  };
+
+  const firstHeadingNode = parsed.document.nodes.find((node) => node.type === 'heading');
 
   const sections: UISchema['sections'] = parsed.sections.map((section, sectionIndex) => {
     const components: UIComponent[] = [];
+    const sectionPath = `$.sections[${sectionIndex}]`;
+
+    pushTrace(section.headingLine, `${sectionPath}.id`, section.id);
+    pushTrace(section.headingLine, `${sectionPath}.name`, section.name);
+    pushTrace(section.headingLine, `${sectionPath}.position`, section.position);
 
     for (const node of section.nodes) {
-      const texts = collectNodeTexts(node);
-      for (const text of texts) {
+      const entries = collectNodeTextEntries(node);
+      for (const entry of entries) {
+        const text = entry.text;
         if (!text.trim()) continue;
         componentIndex += 1;
-        components.push(
-          inferComponent(text, componentIndex, {
-            sectionName: section.name,
-            nodeType: node.type
-          })
-        );
+        const component = inferComponent(text, componentIndex, {
+          sectionName: section.name,
+          nodeType: node.type
+        });
+        const componentPath = `${sectionPath}.components[${components.length}]`;
+
+        pushTrace(entry.line, `${componentPath}.id`, component.id);
+        pushTrace(entry.line, `${componentPath}.type`, component.type);
+        pushTrace(entry.line, `${componentPath}.props`, text.trim());
+        components.push(component);
       }
     }
 
@@ -658,6 +695,8 @@ export const parsePrdToSchema = (markdown: string): UISchema => {
         }
       ]
     });
+    pushTrace(1, '$.sections[0].id', 'section_1');
+    pushTrace(1, '$.sections[0].components[0].id', 'component_1');
   }
 
   if (!sections.some((section) => section.components.length > 0)) {
@@ -668,17 +707,52 @@ export const parsePrdToSchema = (markdown: string): UISchema => {
       style: {},
       children: []
     });
+    pushTrace(1, '$.sections[0].components[0].id', 'component_1');
   }
 
-  const firstHeadingNode = parsed.document.nodes.find((node) => node.type === 'heading');
+  const interactions = inferInteractions(parsed, sections);
+  interactions.forEach((interaction, interactionIndex) => {
+    const interactionPath = `$.interactions[${interactionIndex}]`;
+    const sourceText = String(interaction.sourceText ?? '');
+    const sourceLine =
+      parsed.document.nodes.find((node) =>
+        collectNodeTexts(node).some((text) => text.trim() === sourceText.trim())
+      )?.type === 'heading'
+        ? (
+            parsed.document.nodes.find(
+              (node) => node.type === 'heading' && node.text.trim() === sourceText.trim()
+            ) as Extract<AstNode, { type: 'heading' }>
+          ).line
+        : ((
+            parsed.document.nodes.find((node) =>
+              collectNodeTexts(node).some((text) => text.trim() === sourceText.trim())
+            ) as Exclude<AstNode, { type: 'heading' }> | undefined
+          )?.startLine ?? 1);
+    pushTrace(sourceLine, `${interactionPath}.id`, String(interaction.id ?? ''));
+    pushTrace(sourceLine, `${interactionPath}.event`, String(interaction.event ?? ''));
+    pushTrace(
+      sourceLine,
+      `${interactionPath}.targetAction`,
+      String(interaction.targetAction ?? '')
+    );
+    pushTrace(sourceLine, `${interactionPath}.componentId`, String(interaction.componentId ?? ''));
+  });
 
-  return {
+  const pageLine = firstHeadingNode?.line ?? 1;
+  const pageName = toSnakeCase(firstHeadingNode?.text ?? 'generated_page') || 'generated_page';
+  pushTrace(pageLine, '$.schemaVersion', String(CURRENT_UI_SCHEMA_VERSION));
+  pushTrace(pageLine, '$.page_name', pageName);
+  pushTrace(pageLine, '$.layout.type', 'grid');
+  pushTrace(pageLine, '$.layout.columns', '24');
+
+  const schema: UISchema = {
     schemaVersion: CURRENT_UI_SCHEMA_VERSION,
-    page_name: toSnakeCase(firstHeadingNode?.text ?? 'generated_page') || 'generated_page',
+    page_name: pageName,
     layout: { type: 'grid', columns: 24 },
     sections,
-    interactions: inferInteractions(parsed, sections)
+    interactions
   };
+  return { schema, trace };
 };
 
 if (process.argv[1]?.endsWith('index.ts')) {
@@ -686,9 +760,11 @@ if (process.argv[1]?.endsWith('index.ts')) {
   const inputPath = path.resolve(repoRoot, 'input/prd.md');
   const outputPath = path.resolve(repoRoot, 'output/structure.json');
   const astOutputPath = path.resolve(repoRoot, 'output/ast.json');
+  const traceOutputPath = path.resolve(repoRoot, 'output/trace.json');
   const markdown = fs.readFileSync(inputPath, 'utf8');
   const ast = parsePrdToAst(markdown);
-  const schema = parsePrdToSchema(markdown);
+  const { schema, trace } = astToSchema(ast);
   fs.writeFileSync(astOutputPath, `${JSON.stringify(ast, null, 2)}\n`);
   fs.writeFileSync(outputPath, `${JSON.stringify(schema, null, 2)}\n`);
+  fs.writeFileSync(traceOutputPath, `${JSON.stringify(trace, null, 2)}\n`);
 }

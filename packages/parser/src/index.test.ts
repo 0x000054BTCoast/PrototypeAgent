@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { parsePrdToAst, parsePrdToSchema } from './index.js';
+import { astToSchema, parsePrdToAst, parsePrdToSchema } from './index.js';
 
 describe('parsePrdToAst', () => {
   const markdown = `# Dashboard\n\n## Header\n- Primary button\n- Secondary button\n\nRevenue chart in hero\n\n> Focus metric\n\n\
@@ -71,6 +71,31 @@ Orders overview
     assert.ok(
       schema.interactions.some(
         (item) => typeof item.triggerCondition === 'string' && item.triggerCondition.length > 0
+      )
+    );
+  });
+
+  it('builds trace entries from source lines to schema paths', () => {
+    const ast = parsePrdToAst(`# 报表页
+
+## 操作区
+- 点击导出
+`);
+    const { schema, trace } = astToSchema(ast);
+
+    assert.ok(trace.length > 0);
+    assert.ok(trace.some((entry) => entry.schemaPath === '$.page_name' && entry.sourceLine === 1));
+    assert.ok(
+      trace.some(
+        (entry) =>
+          entry.schemaPath === '$.sections[1].components[0].type' &&
+          entry.sourceLine === 4 &&
+          entry.detail === schema.sections[1]?.components[0]?.type
+      )
+    );
+    assert.ok(
+      schema.interactions.every((_, index) =>
+        trace.some((entry) => entry.schemaPath === `$.interactions[${index}].event`)
       )
     );
   });
