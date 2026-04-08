@@ -5,7 +5,9 @@
   "type": "module",
   "dependencies": {
     "@prd2prototype/codegen": "workspace:*",
-    "@prd2prototype/parser": "workspace:*"
+    "@prd2prototype/parser": "workspace:*",
+    "@prd2prototype/schema": "workspace:*",
+    "zod": "^3.24.4"
   },
   "scripts": {
     "pipeline": "tsx src/pipeline.ts",
