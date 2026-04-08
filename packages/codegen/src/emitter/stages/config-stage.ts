@@ -1,4 +1,4 @@
-import type { StageEmitter } from '../types.js';
+import type { StageEmitter } from '../types';
 import {
   globalsTemplate,
   nextConfigTemplate,
@@ -7,7 +7,7 @@ import {
   postcssTemplate,
   tailwindConfigTemplate,
   tsconfigTemplate
-} from '../templates/config/core-config.js';
+} from '../templates/config/core-config';
 
 export const configStageEmitter: StageEmitter = {
   name: 'config',

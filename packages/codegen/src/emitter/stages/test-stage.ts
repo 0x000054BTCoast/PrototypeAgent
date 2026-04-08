@@ -1,5 +1,5 @@
-import type { StageEmitter } from '../types.js';
-import { renderSchemaSmokeTest } from '../templates/tests/smoke-test.js';
+import type { StageEmitter } from '../types';
+import { renderSchemaSmokeTest } from '../templates/tests/smoke-test';
 
 export const testStageEmitter: StageEmitter = {
   name: 'test',

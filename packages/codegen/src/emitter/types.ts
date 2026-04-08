@@ -1,5 +1,5 @@
 import type { UISchema } from '@prd2prototype/schema';
-import type { EngineeringTemplate } from '../template-strategy.js';
+import type { EngineeringTemplate } from '../template-strategy';
 
 export interface EmitArtifact {
   path: string;
