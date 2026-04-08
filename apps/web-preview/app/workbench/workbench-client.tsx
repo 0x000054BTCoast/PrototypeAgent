@@ -15,7 +15,7 @@ interface RunRecord {
   name: string;
   status: RunStatus;
   provider: 'auto' | 'deepseek' | 'fallback' | 'local';
-  outputDir: string;
+  runDir: string;
   totalDurationMs?: number;
   error?: { code: string; message: string };
   updatedAt: string;
@@ -41,7 +41,7 @@ export function WorkbenchClient() {
   const [prdText, setPrdText] = useState('');
   const [prdPath, setPrdPath] = useState('input/prd.md');
   const [provider, setProvider] = useState<'auto' | 'deepseek' | 'fallback' | 'local'>('auto');
-  const [outputDir, setOutputDir] = useState('');
+  const [runDir, setRunDir] = useState('');
   const [runName, setRunName] = useState('');
   const [runs, setRuns] = useState<RunRecord[]>([]);
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
@@ -52,10 +52,10 @@ export function WorkbenchClient() {
 
   const loadRuns = async () => {
     const res = await fetch('/api/runs');
-    const data = (await res.json()) as { runs: RunRecord[] };
+    const data = (await res.json()) as { runs: RunRecord[]; latestRunId?: string | null };
     setRuns(data.runs);
-    if (!activeRunId && data.runs[0]) {
-      setActiveRunId(data.runs[0].id);
+    if (!activeRunId) {
+      setActiveRunId(data.latestRunId ?? data.runs[0]?.id ?? null);
     }
   };
 
@@ -67,14 +67,14 @@ export function WorkbenchClient() {
     const data = (await res.json()) as RunDetailResponse;
     setEvents(data.log?.events ?? []);
 
-    const structureRes = await fetch(`/api/runs/${runId}/artifacts/structure.json`);
+    const structureRes = await fetch(`/api/runs/${runId}/artifacts/artifacts/structure.json`);
     if (structureRes.ok) {
       setStructureJson(await structureRes.text());
     } else {
       setStructureJson('');
     }
 
-    setPreviewUrl(`/api/runs/${runId}/artifacts/preview.html`);
+    setPreviewUrl(`/api/runs/${runId}/artifacts/output/preview.html`);
   };
 
   useEffect(() => {
@@ -94,7 +94,7 @@ export function WorkbenchClient() {
         prdText: prdText.trim() || undefined,
         prdPath,
         provider,
-        outputDir: outputDir.trim() || undefined,
+        runDir: runDir.trim() || undefined,
         runName: runName.trim() || undefined
       };
       const res = await fetch('/api/run', {
@@ -140,11 +140,11 @@ export function WorkbenchClient() {
             <option value="fallback">fallback</option>
             <option value="local">local</option>
           </SelectField>
-          <label className="mb-xs mt-sm block text-sm text-text-muted">输出目录</label>
+          <label className="mb-xs mt-sm block text-sm text-text-muted">运行目录</label>
           <InputField
-            value={outputDir}
-            onChange={(event) => setOutputDir(event.target.value)}
-            placeholder="默认 output/runs/{runName}"
+            value={runDir}
+            onChange={(event) => setRunDir(event.target.value)}
+            placeholder="默认 runs/{timestamp}_{traceId}"
           />
           <label className="mb-xs mt-sm block text-sm text-text-muted">Run 名称</label>
           <InputField

@@ -8,7 +8,7 @@ export interface RunRecord {
   name: string;
   status: RunStatus;
   provider: 'auto' | 'deepseek' | 'fallback' | 'local';
-  outputDir: string;
+  runDir: string;
   inputMode: 'text' | 'file';
   inputPath?: string;
   createdAt: string;
@@ -21,9 +21,11 @@ export interface RunRecord {
 }
 
 const repoRoot = process.cwd();
-const runsRoot = path.resolve(repoRoot, 'output', 'runs');
+const runsRoot = path.resolve(repoRoot, 'runs');
+const outputRoot = path.resolve(repoRoot, 'output');
 
 const getManifestPath = () => path.resolve(runsRoot, 'manifest.json');
+const getLatestRunPointerPath = () => path.resolve(outputRoot, 'latest-run.json');
 
 export const ensureRunsStore = (): void => {
   fs.mkdirSync(runsRoot, { recursive: true });
@@ -61,4 +63,30 @@ export const getRunById = (id: string): RunRecord | null => {
   return runs.find((run) => run.id === id) ?? null;
 };
 
+export const getLatestRunId = (): string | null => {
+  const pointerPath = getLatestRunPointerPath();
+  if (fs.existsSync(pointerPath)) {
+    try {
+      const parsed = JSON.parse(fs.readFileSync(pointerPath, 'utf8')) as { runId?: unknown };
+      if (typeof parsed.runId === 'string' && parsed.runId.trim()) {
+        return parsed.runId;
+      }
+    } catch {
+      // noop
+    }
+  }
+
+  const [latest] = readRuns();
+  return latest?.id ?? null;
+};
+
+export const getLatestRun = (): RunRecord | null => {
+  const latestRunId = getLatestRunId();
+  if (!latestRunId) {
+    return null;
+  }
+  return getRunById(latestRunId);
+};
+
 export const getRunsRoot = (): string => runsRoot;
+export const getRepoRoot = (): string => repoRoot;
