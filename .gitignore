@@ -1,3 +1,11 @@
 node_modules/
 frontend/
 *.tsbuildinfo
+
+# Next.js build output
+apps/web-preview/.next/
+
+# Pipeline runtime artifacts
+runs/
+output/latest
+output/latest-run.json
