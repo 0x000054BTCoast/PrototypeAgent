@@ -7,6 +7,7 @@ npm install
 npm run pipeline
 # or run baseline (prd -> structure.json -> frontend with timing stats)
 npm run baseline
+npm run quality:gate  # generate + checks + auto-fix retries + report
 ```
 
 ## Run Frontend
@@ -23,6 +24,7 @@ npm run patch -- "add button to header interaction"
 npm run pipeline
 # or run baseline (prd -> structure.json -> frontend with timing stats)
 npm run baseline
+npm run quality:gate  # generate + checks + auto-fix retries + report
 ```
 
 ## Parser Evaluation

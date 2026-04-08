@@ -22,7 +22,9 @@
     "prepare": "husky",
     "baseline": "tsx scripts/baseline-run.ts",
     "eval:parser": "tsx scripts/parser-eval.ts",
-    "dag": "tsx scripts/generate-dag.ts"
+    "dag": "tsx scripts/generate-dag.ts",
+    "quality:gate": "tsx scripts/quality-gate.ts",
+    "quality:gate:strict": "tsx scripts/quality-gate.ts --max-retries 3"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.1.0",

@@ -14,6 +14,7 @@ npm run lint                        # eslint
 npm run test                        # turbo 测试
 npm run typecheck                   # turbo 类型检查
 npm run check                       # lint + test + typecheck + build
+npm run quality:gate                # 生成 + typecheck + lint + build + e2e smoke + screenshot diff（失败自动修复并重试）
 ```
 
 其中：
@@ -85,3 +86,39 @@ npm run dag -- fixtures/schema-references/sample-01-dashboard.json output/sample
 该命令会输出 Mermaid 流程图，显式展示 `tokens → primitives → routes → features → tests` 的阶段顺序及依赖关系。
 
 默认输出：`output/task-dag.md`。
+
+## 6. 质量闸门（自动重试 + 自动修复）
+
+新增命令：
+
+```bash
+npm run quality:gate
+# 等价于: tsx scripts/quality-gate.ts
+
+# 指定自动修复重试上限（例如 3 次）
+npm run quality:gate:strict
+# 等价于: tsx scripts/quality-gate.ts --max-retries 3
+```
+
+流程顺序：
+
+1. `pipeline`（先生成）
+2. `typecheck`
+3. `lint`
+4. `build`
+5. `e2e smoke`（`pnpm --filter web-preview test`）
+6. `screenshot diff`（`fixtures/screenshots` vs `output/screenshots`）
+
+失败处理策略：
+
+- 任一阻断步骤失败后，自动执行：
+  - `pnpm exec eslint . --fix`
+  - `pnpm format`
+- 然后重跑完整流程，最多重试 `N` 次（`--max-retries N`）。
+
+报告产物：
+
+- `output/quality-gate-report.json`
+- `output/quality-gate-report.md`
+
+> 注：若 `output/screenshots` 不存在，`screenshot diff` 记为 `WARNING`，不会阻断整体验证。
