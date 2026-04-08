@@ -624,7 +624,7 @@ function formatIssuePath(path: Array<string | number>): string {
     return '$';
   }
 
-  return path.reduce((acc, current) => {
+  return path.reduce<string>((acc, current) => {
     if (typeof current === 'number') {
       return `${acc}[${current}]`;
     }
