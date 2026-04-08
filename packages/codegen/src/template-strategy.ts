@@ -99,13 +99,13 @@ export const inferSchemaIntent = (
 ): EngineeringTemplate => {
   const explicitIntent =
     typeof schema.intent === 'string' ? schema.intent.toLowerCase().trim() : '';
-  const intentToTemplate = {
+  const intentToTemplate: Record<string, EngineeringTemplate> = {
     dashboard: 'dashboard',
     crm: 'crm',
     landing: 'landing',
     admin: 'admin',
     ...config.intentToTemplate
-  } satisfies Record<string, EngineeringTemplate>;
+  };
 
   if (explicitIntent && explicitIntent in intentToTemplate) {
     return intentToTemplate[explicitIntent];
