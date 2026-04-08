@@ -55,4 +55,23 @@ Orders overview
     assert.equal(trendSection?.components[0]?.type, 'chart');
     assert.equal(tableSection?.components[0]?.type, 'table');
   });
+
+  it('extracts interactions with event/condition/target action', () => {
+    const schema = parsePrdToSchema(`# 用户列表
+
+## 操作区
+- 点击提交按钮后跳转详情页
+- 当选择筛选条件后，过滤列表
+`);
+
+    assert.ok(schema.interactions.length > 0);
+    assert.ok(schema.interactions.some((item) => item.event === 'click'));
+    assert.ok(schema.interactions.some((item) => item.targetAction === 'navigate'));
+    assert.ok(schema.interactions.some((item) => item.targetAction === 'filter'));
+    assert.ok(
+      schema.interactions.some(
+        (item) => typeof item.triggerCondition === 'string' && item.triggerCondition.length > 0
+      )
+    );
+  });
 });
