@@ -26,7 +26,7 @@
 
 ## 2. 前置条件
 
-请准备：
+请提前准备：
 
 - 一台 Linux 服务器，推荐 Ubuntu 22.04 或 24.04
 - 一个有 `sudo` 权限的账号
@@ -64,17 +64,21 @@ corepack prepare pnpm@10.7.1 --activate
 pnpm -v
 ```
 
-### 3.3 拉取代码
+### 3.3 拉取仓库并安装依赖
 
 ```bash
 git clone <你的仓库地址> PrototypeAgent
 cd PrototypeAgent
 ```
 
-### 3.4 安装依赖
+---
+
+## 4. 首次部署（最小可运行）
+
+### 4.1 先生成一次产物（可选但推荐）
 
 ```bash
-pnpm install
+pnpm pipeline
 ```
 
 ## 4. 首次生成运行产物
@@ -222,7 +226,7 @@ pnpm runs:prune -- --keep 20 --days 7
 ```bash
 cd /path/to/PrototypeAgent
 git pull
-pnpm install
+pnpm install --frozen-lockfile
 pnpm --filter web-preview build
 pm2 restart prototype-agent-web
 ```
@@ -237,7 +241,9 @@ pnpm pipeline
 
 ## 10. 常见问题
 
-### Q1：`pnpm: command not found`
+[Install]
+WantedBy=multi-user.target
+```
 
 通常是 `corepack` 未启用或 shell 环境未刷新。
 

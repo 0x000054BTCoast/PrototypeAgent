@@ -35,6 +35,7 @@ project-root/
         llm-structured.json
         structure.json
         app-schema-v2.json
+        compatibility-report.json
       output/
         preview.html
         prototype.svg
@@ -149,6 +150,9 @@ pnpm patch -- "add button to header interaction"
 
 # 解析器评估
 pnpm eval:parser
+
+# 从 schema 生成任务 DAG
+pnpm dag
 
 # 质量门禁（本地）
 pnpm quality:gate
