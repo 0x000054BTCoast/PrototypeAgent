@@ -1,0 +1,9 @@
+{
+  "name": "销售看板",
+  "components": [
+    { "id": "title", "type": "text", "props": { "content": "销售看板" } },
+    { "id": "kpi-sales", "type": "card", "props": { "title": "今日销售额" } },
+    { "id": "kpi-orders", "type": "card", "props": { "title": "订单数" } },
+    { "id": "trend", "type": "chart", "props": { "title": "趋势" } }
+  ]
+}
