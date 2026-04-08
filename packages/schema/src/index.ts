@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 export type Position = 'top' | 'left' | 'center' | 'right' | 'bottom';
 
 export interface UIComponent {
@@ -209,4 +211,426 @@ export interface AppConstraintV2 {
   rule: string;
   level: 'warn' | 'error';
   message?: string;
+}
+
+/**
+ * AppSchemaV2 的 JSON Schema（Draft 2020-12）。
+ * 可用于 AJV 等校验器，也可用于文档/契约同步。
+ */
+export const appSchemaV2JsonSchema = {
+  $schema: 'https://json-schema.org/draft/2020-12/schema',
+  $id: 'https://prd2prototype.dev/schema/app-schema-v2.json',
+  title: 'AppSchemaV2',
+  type: 'object',
+  additionalProperties: false,
+  required: ['routes', 'views', 'components', 'data', 'actions', 'design', 'constraints'],
+  properties: {
+    routes: { type: 'array', items: { $ref: '#/$defs/AppRouteV2' } },
+    views: { type: 'array', items: { $ref: '#/$defs/AppViewV2' } },
+    components: { type: 'array', items: { $ref: '#/$defs/AppComponentV2' } },
+    data: { $ref: '#/$defs/AppDataV2' },
+    actions: { type: 'array', items: { $ref: '#/$defs/AppActionV2' } },
+    design: { $ref: '#/$defs/AppDesignV2' },
+    constraints: { type: 'array', items: { $ref: '#/$defs/AppConstraintV2' } }
+  },
+  $defs: {
+    AppRouteV2: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['id', 'path', 'name', 'view'],
+      properties: {
+        id: { type: 'string', minLength: 1 },
+        path: { type: 'string', minLength: 1 },
+        name: { type: 'string', minLength: 1 },
+        view: { type: 'string', minLength: 1 },
+        guards: {
+          type: 'array',
+          items: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['kind', 'rule'],
+            properties: {
+              kind: { enum: ['auth', 'role', 'feature_flag'] },
+              rule: { type: 'string', minLength: 1 }
+            }
+          }
+        },
+        meta: { type: 'object', additionalProperties: true }
+      }
+    },
+    AppViewV2: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['id', 'title', 'layout', 'rootComponentIds'],
+      properties: {
+        id: { type: 'string', minLength: 1 },
+        title: { type: 'string', minLength: 1 },
+        layout: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['type'],
+          properties: {
+            type: { enum: ['grid', 'stack', 'free'] },
+            columns: { type: 'number' },
+            gap: { type: 'number' }
+          }
+        },
+        rootComponentIds: { type: 'array', items: { type: 'string', minLength: 1 } },
+        paramsSchema: { type: 'object', additionalProperties: { type: 'string' } },
+        meta: { type: 'object', additionalProperties: true }
+      }
+    },
+    AppComponentV2: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['id', 'type', 'props'],
+      properties: {
+        id: { type: 'string', minLength: 1 },
+        type: { enum: ['container', 'text', 'button', 'table', 'chart', 'form', 'input'] },
+        props: { type: 'object', additionalProperties: true },
+        style: { type: 'object', additionalProperties: true },
+        children: { type: 'array', items: { type: 'string', minLength: 1 } },
+        bindings: {
+          type: 'array',
+          items: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['prop', 'from'],
+            properties: {
+              prop: { type: 'string', minLength: 1 },
+              from: { type: 'string', minLength: 1 },
+              transform: { type: 'string' }
+            }
+          }
+        },
+        meta: { type: 'object', additionalProperties: true }
+      }
+    },
+    AppDataV2: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['entities', 'queries', 'states'],
+      properties: {
+        entities: { type: 'array', items: { $ref: '#/$defs/AppEntityV2' } },
+        queries: { type: 'array', items: { $ref: '#/$defs/AppQueryV2' } },
+        states: { type: 'array', items: { $ref: '#/$defs/AppStateV2' } }
+      }
+    },
+    AppEntityV2: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['id', 'shape'],
+      properties: {
+        id: { type: 'string', minLength: 1 },
+        shape: { type: 'object', additionalProperties: { type: 'string' } },
+        constraints: { type: 'array', items: { type: 'string' } }
+      }
+    },
+    AppQueryV2: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['id', 'source'],
+      properties: {
+        id: { type: 'string', minLength: 1 },
+        source: { enum: ['rest', 'graphql', 'local'] },
+        endpoint: { type: 'string' },
+        method: { enum: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] },
+        dependsOn: { type: 'array', items: { type: 'string' } }
+      }
+    },
+    AppStateV2: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['id', 'type', 'initial'],
+      properties: {
+        id: { type: 'string', minLength: 1 },
+        type: { enum: ['string', 'number', 'boolean', 'array', 'object'] },
+        initial: true
+      }
+    },
+    AppActionV2: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['id', 'trigger', 'effects'],
+      properties: {
+        id: { type: 'string', minLength: 1 },
+        trigger: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['type'],
+          properties: {
+            type: { enum: ['click', 'submit', 'load', 'change'] },
+            componentId: { type: 'string' }
+          }
+        },
+        conditions: { type: 'array', items: { type: 'string' } },
+        effects: {
+          type: 'array',
+          items: { $ref: '#/$defs/AppActionEffectV2' }
+        }
+      }
+    },
+    AppActionEffectV2: {
+      oneOf: [
+        {
+          type: 'object',
+          additionalProperties: false,
+          required: ['type', 'target', 'value'],
+          properties: {
+            type: { const: 'set_state' },
+            target: { type: 'string', minLength: 1 },
+            value: true
+          }
+        },
+        {
+          type: 'object',
+          additionalProperties: false,
+          required: ['type', 'queryId'],
+          properties: {
+            type: { const: 'run_query' },
+            queryId: { type: 'string', minLength: 1 }
+          }
+        },
+        {
+          type: 'object',
+          additionalProperties: false,
+          required: ['type', 'to'],
+          properties: {
+            type: { const: 'navigate' },
+            to: { type: 'string', minLength: 1 }
+          }
+        },
+        {
+          type: 'object',
+          additionalProperties: false,
+          required: ['type', 'event'],
+          properties: {
+            type: { const: 'emit' },
+            event: { type: 'string', minLength: 1 },
+            payload: { type: 'object', additionalProperties: true }
+          }
+        }
+      ]
+    },
+    AppDesignV2: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['theme', 'tokens', 'breakpoints'],
+      properties: {
+        theme: { enum: ['light', 'dark', 'system'] },
+        tokens: {
+          type: 'object',
+          additionalProperties: { anyOf: [{ type: 'string' }, { type: 'number' }] }
+        },
+        breakpoints: {
+          type: 'object',
+          additionalProperties: { type: 'number' }
+        }
+      }
+    },
+    AppConstraintV2: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['kind', 'rule', 'level'],
+      properties: {
+        kind: { enum: ['naming', 'a11y', 'performance', 'security', 'custom'] },
+        rule: { type: 'string', minLength: 1 },
+        level: { enum: ['warn', 'error'] },
+        message: { type: 'string' }
+      }
+    }
+  }
+} as const;
+
+const appActionEffectV2Schema = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('set_state'),
+    target: z.string().min(1),
+    value: z.unknown()
+  }),
+  z.object({
+    type: z.literal('run_query'),
+    queryId: z.string().min(1)
+  }),
+  z.object({
+    type: z.literal('navigate'),
+    to: z.string().min(1)
+  }),
+  z.object({
+    type: z.literal('emit'),
+    event: z.string().min(1),
+    payload: z.record(z.string(), z.unknown()).optional()
+  })
+]);
+
+export const appSchemaV2Validator = z
+  .object({
+    routes: z.array(
+      z.object({
+        id: z.string().min(1),
+        path: z.string().min(1),
+        name: z.string().min(1),
+        view: z.string().min(1),
+        guards: z
+          .array(
+            z.object({
+              kind: z.enum(['auth', 'role', 'feature_flag']),
+              rule: z.string().min(1)
+            })
+          )
+          .optional(),
+        meta: z.record(z.string(), z.unknown()).optional()
+      })
+    ),
+    views: z.array(
+      z.object({
+        id: z.string().min(1),
+        title: z.string().min(1),
+        layout: z.object({
+          type: z.enum(['grid', 'stack', 'free']),
+          columns: z.number().optional(),
+          gap: z.number().optional()
+        }),
+        rootComponentIds: z.array(z.string().min(1)),
+        paramsSchema: z.record(z.string(), z.string()).optional(),
+        meta: z.record(z.string(), z.unknown()).optional()
+      })
+    ),
+    components: z.array(
+      z.object({
+        id: z.string().min(1),
+        type: z.enum(['container', 'text', 'button', 'table', 'chart', 'form', 'input']),
+        props: z.record(z.string(), z.unknown()),
+        style: z.record(z.string(), z.unknown()).optional(),
+        children: z.array(z.string().min(1)).optional(),
+        bindings: z
+          .array(
+            z.object({
+              prop: z.string().min(1),
+              from: z.string().min(1),
+              transform: z.string().optional()
+            })
+          )
+          .optional(),
+        meta: z.record(z.string(), z.unknown()).optional()
+      })
+    ),
+    data: z.object({
+      entities: z.array(
+        z.object({
+          id: z.string().min(1),
+          shape: z.record(z.string(), z.string()),
+          constraints: z.array(z.string()).optional()
+        })
+      ),
+      queries: z.array(
+        z.object({
+          id: z.string().min(1),
+          source: z.enum(['rest', 'graphql', 'local']),
+          endpoint: z.string().optional(),
+          method: z.enum(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']).optional(),
+          dependsOn: z.array(z.string()).optional()
+        })
+      ),
+      states: z.array(
+        z.object({
+          id: z.string().min(1),
+          type: z.enum(['string', 'number', 'boolean', 'array', 'object']),
+          initial: z.unknown()
+        })
+      )
+    }),
+    actions: z.array(
+      z.object({
+        id: z.string().min(1),
+        trigger: z.object({
+          type: z.enum(['click', 'submit', 'load', 'change']),
+          componentId: z.string().optional()
+        }),
+        conditions: z.array(z.string()).optional(),
+        effects: z.array(appActionEffectV2Schema)
+      })
+    ),
+    design: z.object({
+      theme: z.enum(['light', 'dark', 'system']),
+      tokens: z.record(z.string(), z.union([z.string(), z.number()])),
+      breakpoints: z.record(z.string(), z.number())
+    }),
+    constraints: z.array(
+      z.object({
+        kind: z.enum(['naming', 'a11y', 'performance', 'security', 'custom']),
+        rule: z.string().min(1),
+        level: z.enum(['warn', 'error']),
+        message: z.string().optional()
+      })
+    )
+  })
+  .strict();
+
+export interface AppSchemaValidationIssue {
+  path: string;
+  message: string;
+}
+
+export interface AppSchemaValidationError {
+  summary: string;
+  issues: AppSchemaValidationIssue[];
+}
+
+function formatIssuePath(path: Array<string | number>): string {
+  if (path.length === 0) {
+    return '$';
+  }
+
+  return path.reduce((acc, current) => {
+    if (typeof current === 'number') {
+      return `${acc}[${current}]`;
+    }
+    return acc === '$' ? `$.${current}` : `${acc}.${current}`;
+  }, '$');
+}
+
+function normalizeIssueMessage(issue: z.ZodIssue): string {
+  if (issue.code === 'invalid_type') {
+    return `类型错误：期望 ${issue.expected}，实际 ${issue.received}`;
+  }
+  if (issue.code === 'invalid_enum_value') {
+    return `枚举值非法：可选值为 ${issue.options.join(', ')}`;
+  }
+  if (issue.code === 'unrecognized_keys') {
+    return `存在未定义字段：${issue.keys.join(', ')}`;
+  }
+  return issue.message;
+}
+
+export function validateAppSchemaV2(
+  input: unknown
+): { success: true; data: AppSchemaV2 } | { success: false; error: AppSchemaValidationError } {
+  const parsed = appSchemaV2Validator.safeParse(input);
+  if (parsed.success) {
+    return { success: true, data: parsed.data as AppSchemaV2 };
+  }
+
+  const issues = parsed.error.issues.map((issue) => ({
+    path: formatIssuePath(issue.path),
+    message: normalizeIssueMessage(issue)
+  }));
+
+  return {
+    success: false,
+    error: {
+      summary: `AppSchemaV2 校验失败，共 ${issues.length} 处错误`,
+      issues
+    }
+  };
+}
+
+export function assertValidAppSchemaV2(input: unknown): AppSchemaV2 {
+  const result = validateAppSchemaV2(input);
+  if (result.success) {
+    return result.data;
+  }
+
+  const detail = result.error.issues.map((item) => `- ${item.path}: ${item.message}`).join('\n');
+  throw new Error(`${result.error.summary}\n${detail}`);
 }
