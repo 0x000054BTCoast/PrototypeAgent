@@ -182,3 +182,32 @@ pnpm --filter web-preview dev
 ```
 
 到这一步，你就已经能跑起来了。
+
+---
+
+## 10. 仅用 Web 工作台完成一次生成
+
+如果你不想碰命令行，可以直接在 Web 工作台完成一次完整生成：
+
+1. 启动 Web 站点：
+
+```bash
+pnpm --filter web-preview dev
+```
+
+2. 浏览器打开 `http://localhost:3000/workbench`。
+3. 在“输入区”填写：
+   - PRD 文本（直接粘贴）或
+   - PRD 文件路径（例如 `input/prd.md`）。
+4. 在“运行配置区”设置：
+   - 模型 Provider（`auto/deepseek/fallback/local`）
+   - 输出目录（可留空，默认 `output/runs/{runName}`）
+   - run 名称（建议填有业务含义的名字）
+5. 点击“运行 Planner”。
+6. 在“结果区”查看：
+   - 结构化 JSON（`structure.json`）
+   - Prototype 预览（`preview.html`）
+   - 日志事件流（来自 `pipeline-log.json`，可看阶段耗时和错误码）
+7. 在“历史运行”里切换不同 run，回看之前产物与状态。
+
+这样就能完成从需求输入到原型查看的闭环，无需手动执行 `pnpm pipeline`。

@@ -33,6 +33,7 @@ type Transport = (url: string, init: RequestInit) => Promise<Response>;
 
 export interface PlannerClientOptions {
   transport?: Transport;
+  preferredProvider?: 'auto' | 'deepseek' | 'fallback' | 'local';
   deepseekApiKey?: string;
   deepseekModel?: string;
   fallbackApiKey?: string;
@@ -104,11 +105,15 @@ export class LLMPlannerClient {
     const prompt = buildStructuredPlanningPrompt(prdMarkdown);
     const failures: ProviderAttemptFailure[] = [];
 
+    const preferredProvider = this.options.preferredProvider ?? 'auto';
+    const allowDeepseek = preferredProvider === 'auto' || preferredProvider === 'deepseek';
+    const allowFallback = preferredProvider === 'auto' || preferredProvider === 'fallback';
+
     const deepseekApiKey = this.options.deepseekApiKey ?? process.env.DEEPSEEK_API_KEY;
     const deepseekModel =
       this.options.deepseekModel ?? process.env.DEEPSEEK_MODEL ?? 'deepseek-chat';
 
-    if (deepseekApiKey) {
+    if (allowDeepseek && deepseekApiKey) {
       try {
         const response = await requestOpenAICompatible(this.transport, {
           baseUrl: 'https://api.deepseek.com',
@@ -125,7 +130,7 @@ export class LLMPlannerClient {
           reason: error instanceof Error ? error.message : String(error)
         });
       }
-    } else {
+    } else if (allowDeepseek) {
       failures.push({ provider: 'deepseek', model: deepseekModel, reason: 'missing_api_key' });
     }
 
@@ -137,7 +142,7 @@ export class LLMPlannerClient {
       process.env.FALLBACK_LLM_BASE_URL ??
       'https://api.openai.com/v1';
 
-    if (fallbackApiKey) {
+    if (allowFallback && fallbackApiKey) {
       try {
         const response = await requestOpenAICompatible(this.transport, {
           baseUrl: fallbackBaseUrl,
@@ -154,11 +159,11 @@ export class LLMPlannerClient {
           reason: error instanceof Error ? error.message : String(error)
         });
       }
-    } else {
+    } else if (allowFallback) {
       failures.push({ provider: 'fallback', model: fallbackModel, reason: 'missing_api_key' });
     }
 
-    if (this.options.allowLocalFallback ?? true) {
+    if (preferredProvider === 'local' || (this.options.allowLocalFallback ?? true)) {
       const schema = parsePrdToSchema(prdMarkdown);
       return {
         response: {

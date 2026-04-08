@@ -6,7 +6,8 @@ import { usePathname } from 'next/navigation';
 const NAV_ITEMS = [
   { href: '/workspace/analytics', label: 'Analytics' },
   { href: '/workspace/reports', label: 'Reports' },
-  { href: '/workspace/admin', label: 'Admin' }
+  { href: '/workspace/admin', label: 'Admin' },
+  { href: '/workbench', label: 'Workbench' }
 ];
 
 export function SideNav() {
