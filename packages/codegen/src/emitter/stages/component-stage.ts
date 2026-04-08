@@ -1,6 +1,6 @@
-import type { StageEmitter } from '../types.js';
-import { defaultComponentTemplates } from '../templates/components/default-components.js';
-import { emitRenderSchemaComponent } from '../templates/components/render-schema.js';
+import type { StageEmitter } from '../types';
+import { defaultComponentTemplates } from '../templates/components/default-components';
+import { emitRenderSchemaComponent } from '../templates/components/render-schema';
 
 export const componentStageEmitter: StageEmitter = {
   name: 'component',

@@ -1,5 +1,5 @@
-import type { StageEmitter } from '../types.js';
-import { mockDataTemplate, typesTemplate } from '../templates/data/core-data.js';
+import type { StageEmitter } from '../types';
+import { mockDataTemplate, typesTemplate } from '../templates/data/core-data';
 
 export const dataStageEmitter: StageEmitter = {
   name: 'data',

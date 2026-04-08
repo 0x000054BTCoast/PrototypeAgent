@@ -1,6 +1,6 @@
-import type { StageEmitter } from '../types.js';
-import { layoutTemplate } from '../templates/routes/layout.js';
-import { emitPageRoute } from '../templates/routes/page.js';
+import type { StageEmitter } from '../types';
+import { layoutTemplate } from '../templates/routes/layout';
+import { emitPageRoute } from '../templates/routes/page';
 
 export const routeStageEmitter: StageEmitter = {
   name: 'route',

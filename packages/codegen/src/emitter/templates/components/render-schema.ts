@@ -1,4 +1,4 @@
-import type { ComponentTemplate } from './component-contract.js';
+import type { ComponentTemplate } from './component-contract';
 
 export const emitRenderSchemaComponent = (componentTemplates: ComponentTemplate[]): string => {
   const imports = componentTemplates

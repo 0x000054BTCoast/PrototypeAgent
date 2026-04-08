@@ -1,8 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { UISchema } from '@prd2prototype/schema';
-import { inferSchemaIntent, type TemplateSelectionConfig } from './template-strategy.js';
-import { runEmitterPipeline } from './emitter/pipeline.js';
+import { inferSchemaIntent, type TemplateSelectionConfig } from './template-strategy';
+import { runEmitterPipeline } from './emitter/pipeline';
 
 const ensureDir = (dirPath: string): void => {
   fs.mkdirSync(dirPath, { recursive: true });
