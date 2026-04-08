@@ -20,11 +20,11 @@ const renderComponent = (component: UIComponent) => {
   const state = asState(component.props.state);
 
   if (component.type === 'chart') {
-    return <ChartPlaceholder title={String(component.props.title ?? component.id)} />;
+    return <ChartPlaceholder component={component} />;
   }
 
   if (component.type === 'table') {
-    return <DataTable title={String(component.props.title ?? component.id)} />;
+    return <DataTable component={component} />;
   }
 
   if (component.type === 'button') {
