@@ -1,0 +1,259 @@
+{
+  "generatedAt": "2026-04-08T08:47:39.838Z",
+  "summary": {
+    "sampleCount": 5,
+    "micro": {
+      "precision": 1,
+      "recall": 0.2941,
+      "f1": 0.4545,
+      "tp": 5,
+      "fp": 0,
+      "fn": 12
+    },
+    "macro": {
+      "precision": 1,
+      "recall": 0.3167,
+      "f1": 0.4733
+    }
+  },
+  "samples": [
+    {
+      "sample": "sample-01-dashboard",
+      "page": "销售看板",
+      "precision": 1,
+      "recall": 0.25,
+      "f1": 0.4,
+      "tp": 1,
+      "fp": 0,
+      "fn": 3,
+      "expectedCount": 4,
+      "predictedCount": 1,
+      "expectedTypes": [
+        "text",
+        "card",
+        "card",
+        "chart"
+      ],
+      "predictedTypes": [
+        "chart"
+      ]
+    },
+    {
+      "sample": "sample-02-login",
+      "page": "登录页",
+      "precision": 1,
+      "recall": 0.25,
+      "f1": 0.4,
+      "tp": 1,
+      "fp": 0,
+      "fn": 3,
+      "expectedCount": 4,
+      "predictedCount": 1,
+      "expectedTypes": [
+        "input",
+        "input",
+        "button",
+        "text"
+      ],
+      "predictedTypes": [
+        "button"
+      ]
+    },
+    {
+      "sample": "sample-03-profile",
+      "page": "用户资料页",
+      "precision": 1,
+      "recall": 0.25,
+      "f1": 0.4,
+      "tp": 1,
+      "fp": 0,
+      "fn": 3,
+      "expectedCount": 4,
+      "predictedCount": 1,
+      "expectedTypes": [
+        "image",
+        "text",
+        "text",
+        "button"
+      ],
+      "predictedTypes": [
+        "button"
+      ]
+    },
+    {
+      "sample": "sample-04-table",
+      "page": "数据表格页",
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6667,
+      "tp": 1,
+      "fp": 0,
+      "fn": 1,
+      "expectedCount": 2,
+      "predictedCount": 1,
+      "expectedTypes": [
+        "table",
+        "pagination"
+      ],
+      "predictedTypes": [
+        "table"
+      ]
+    },
+    {
+      "sample": "sample-05-settings",
+      "page": "设置页",
+      "precision": 1,
+      "recall": 0.3333,
+      "f1": 0.5,
+      "tp": 1,
+      "fp": 0,
+      "fn": 2,
+      "expectedCount": 3,
+      "predictedCount": 1,
+      "expectedTypes": [
+        "switch",
+        "switch",
+        "button"
+      ],
+      "predictedTypes": [
+        "button"
+      ]
+    }
+  ],
+  "confusion": {
+    "labels": [
+      "__missing__",
+      "button",
+      "card",
+      "chart",
+      "image",
+      "input",
+      "pagination",
+      "switch",
+      "table",
+      "text"
+    ],
+    "matrix": [
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0
+      ],
+      [
+        3,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    ]
+  }
+}
