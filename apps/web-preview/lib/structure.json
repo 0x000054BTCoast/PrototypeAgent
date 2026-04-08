@@ -1,36 +1,39 @@
 {
-  "schemaVersion": 1,
-  "page_name": "analytics_workspace",
+  "schemaVersion": 2,
+  "page_name": "现货交易对管理",
   "layout": {
     "type": "grid",
     "columns": 24
   },
   "sections": [
     {
-      "id": "section_1",
-      "name": "analytics_workspace",
-      "position": "center",
-      "components": []
-    },
-    {
-      "id": "section_2",
-      "name": "header",
+      "id": "header",
+      "name": "页面顶部",
       "position": "top",
       "components": [
         {
-          "id": "component_2",
-          "type": "card",
+          "id": "search_input",
+          "type": "text",
           "props": {
-            "title": "- Card: KPI summary"
+            "placeholder": "输入交易对名"
           },
           "style": {},
           "children": []
         },
         {
-          "id": "component_3",
+          "id": "search_button",
           "type": "button",
           "props": {
-            "label": "Button: Create report"
+            "label": "搜索"
+          },
+          "style": {},
+          "children": []
+        },
+        {
+          "id": "reset_button",
+          "type": "button",
+          "props": {
+            "label": "重置"
           },
           "style": {},
           "children": []
@@ -38,49 +41,130 @@
       ]
     },
     {
-      "id": "section_3",
-      "name": "main_dashboard",
+      "id": "main",
+      "name": "交易对列表",
       "position": "center",
       "components": [
         {
-          "id": "component_4",
-          "type": "chart",
-          "props": {
-            "title": "- Chart: Revenue by month"
-          },
-          "style": {},
-          "children": []
-        },
-        {
-          "id": "component_5",
+          "id": "trading_pairs_table",
           "type": "table",
           "props": {
-            "title": "- Table: Top customers"
-          },
-          "style": {},
-          "children": []
-        },
-        {
-          "id": "component_6",
-          "type": "card",
-          "props": {
-            "title": "- Card: Alerts"
-          },
-          "style": {},
-          "children": []
-        }
-      ]
-    },
-    {
-      "id": "section_4",
-      "name": "footer",
-      "position": "bottom",
-      "components": [
-        {
-          "id": "component_7",
-          "type": "text",
-          "props": {
-            "content": "Text: Last synced timestamp"
+            "columns": [
+              {
+                "key": "pair_name",
+                "title": "交易对名"
+              },
+              {
+                "key": "status",
+                "title": "交易对状态"
+              },
+              {
+                "key": "actions",
+                "title": "操作"
+              }
+            ],
+            "data": [
+              {
+                "pair_name": "BTC/USDT",
+                "status": "开启中",
+                "actions": "编辑,下线"
+              },
+              {
+                "pair_name": "ETH/USDT",
+                "status": "开启中",
+                "actions": "编辑,下线"
+              },
+              {
+                "pair_name": "BNB/USDT",
+                "status": "开启中",
+                "actions": "编辑,下线"
+              },
+              {
+                "pair_name": "XRP/USDT",
+                "status": "开启中",
+                "actions": "编辑,下线"
+              },
+              {
+                "pair_name": "ADA/USDT",
+                "status": "开启中",
+                "actions": "编辑,下线"
+              },
+              {
+                "pair_name": "SOL/USDT",
+                "status": "开启中",
+                "actions": "编辑,下线"
+              },
+              {
+                "pair_name": "DOT/USDT",
+                "status": "开启中",
+                "actions": "编辑,下线"
+              },
+              {
+                "pair_name": "DOGE/USDT",
+                "status": "开启中",
+                "actions": "编辑,下线"
+              },
+              {
+                "pair_name": "AVAX/USDT",
+                "status": "开启中",
+                "actions": "编辑,下线"
+              },
+              {
+                "pair_name": "MATIC/USDT",
+                "status": "开启中",
+                "actions": "编辑,下线"
+              },
+              {
+                "pair_name": "LTC/USDT",
+                "status": "开启中",
+                "actions": "编辑,下线"
+              },
+              {
+                "pair_name": "UNI/USDT",
+                "status": "开启中",
+                "actions": "编辑,下线"
+              },
+              {
+                "pair_name": "LINK/USDT",
+                "status": "开启中",
+                "actions": "编辑,下线"
+              },
+              {
+                "pair_name": "ATOM/USDT",
+                "status": "开启中",
+                "actions": "编辑,下线"
+              },
+              {
+                "pair_name": "XLM/USDT",
+                "status": "开启中",
+                "actions": "编辑,下线"
+              },
+              {
+                "pair_name": "ALGO/USDT",
+                "status": "开启中",
+                "actions": "编辑,下线"
+              },
+              {
+                "pair_name": "VET/USDT",
+                "status": "开启中",
+                "actions": "编辑,下线"
+              },
+              {
+                "pair_name": "FIL/USDT",
+                "status": "开启中",
+                "actions": "编辑,下线"
+              },
+              {
+                "pair_name": "TRX/USDT",
+                "status": "开启中",
+                "actions": "编辑,下线"
+              },
+              {
+                "pair_name": "EOS/USDT",
+                "status": "开启中",
+                "actions": "编辑,下线"
+              }
+            ]
           },
           "style": {},
           "children": []
@@ -88,5 +172,6 @@
       ]
     }
   ],
-  "interactions": []
+  "interactions": [],
+  "template": "admin"
 }
