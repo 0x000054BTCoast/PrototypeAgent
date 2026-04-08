@@ -2,7 +2,18 @@ export type Position = 'top' | 'left' | 'center' | 'right' | 'bottom';
 
 export interface UIComponent {
   id: string;
-  type: 'chart' | 'table' | 'button' | 'card' | 'text';
+  type:
+    | 'chart'
+    | 'table'
+    | 'button'
+    | 'card'
+    | 'badge'
+    | 'alert'
+    | 'input'
+    | 'textarea'
+    | 'select'
+    | 'tabs'
+    | 'text';
   props: Record<string, unknown>;
   style: Record<string, unknown>;
   children: UIComponent[];
