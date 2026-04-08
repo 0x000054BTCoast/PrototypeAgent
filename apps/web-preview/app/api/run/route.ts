@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { runPipeline } from '../../../../../packages/planner/src/service.js';
+import { runPipeline } from '../../../../../packages/planner/src/service';
 import { getLatestRun, getRunById, upsertRun, type RunRecord } from '@/lib/workbench/store';
 
 interface RunRequestBody {
