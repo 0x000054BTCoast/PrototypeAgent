@@ -21,7 +21,8 @@
     "typecheck:strict": "tsc -p tsconfig.json --noEmit && tsc -p apps/web-preview/tsconfig.json --noEmit",
     "prepare": "husky",
     "baseline": "tsx scripts/baseline-run.ts",
-    "eval:parser": "tsx scripts/parser-eval.ts"
+    "eval:parser": "tsx scripts/parser-eval.ts",
+    "dag": "tsx scripts/generate-dag.ts"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.1.0",
