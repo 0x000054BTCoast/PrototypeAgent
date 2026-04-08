@@ -1,0 +1,28 @@
+{
+  "success": false,
+  "error": {
+    "summary": "AppSchemaV2 校验失败，共 5 处错误",
+    "issues": [
+      {
+        "path": "$.routes[0].id",
+        "message": "String must contain at least 1 character(s)"
+      },
+      {
+        "path": "$.components[0]",
+        "message": "存在未定义字段：extra"
+      },
+      {
+        "path": "$.actions[0].effects[0].to",
+        "message": "String must contain at least 1 character(s)"
+      },
+      {
+        "path": "$.constraints[0].rule",
+        "message": "String must contain at least 1 character(s)"
+      },
+      {
+        "path": "$",
+        "message": "存在未定义字段：unknownField"
+      }
+    ]
+  }
+}

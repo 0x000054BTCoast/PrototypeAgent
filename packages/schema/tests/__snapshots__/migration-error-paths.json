@@ -1,0 +1,7 @@
+{
+  "errors": [
+    "无效的 schemaVersion: 0。仅支持整数版本 1 ~ 2",
+    "不支持的 schemaVersion: v999。当前运行时仅支持到 v2，请升级工具链后重试。",
+    "无效的 schemaVersion: 1.5。仅支持整数版本 1 ~ 2"
+  ]
+}

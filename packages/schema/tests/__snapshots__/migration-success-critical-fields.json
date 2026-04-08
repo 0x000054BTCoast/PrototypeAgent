@@ -1,0 +1,166 @@
+{
+  "normalized": {
+    "schema": {
+      "schemaVersion": 2,
+      "page_name": "sales_dashboard",
+      "layout": {
+        "type": "grid",
+        "columns": 24
+      },
+      "sections": [
+        {
+          "id": "sec_summary",
+          "name": "Summary",
+          "position": "top",
+          "components": [
+            {
+              "id": "cmp_card_1",
+              "type": "card",
+              "props": {
+                "title": "Revenue"
+              },
+              "style": {
+                "padding": 12
+              },
+              "children": []
+            }
+          ]
+        }
+      ],
+      "interactions": [
+        {
+          "from": "cmp_card_1",
+          "action": "open_detail"
+        }
+      ]
+    },
+    "sourceVersion": 1,
+    "upgraded": true
+  },
+  "migrated": {
+    "appSchema": {
+      "routes": [
+        {
+          "id": "route_sales_dashboard",
+          "path": "/sales-dashboard",
+          "name": "sales_dashboard",
+          "view": "view_sales_dashboard"
+        }
+      ],
+      "views": [
+        {
+          "id": "view_sales_dashboard",
+          "title": "Sales Dashboard",
+          "layout": {
+            "type": "grid",
+            "columns": 24,
+            "gap": 16
+          },
+          "rootComponentIds": ["sec_summary_container"]
+        }
+      ],
+      "components": [
+        {
+          "id": "cmp_card_1",
+          "type": "container",
+          "props": {
+            "title": "Revenue"
+          },
+          "style": {
+            "padding": 12
+          },
+          "children": [],
+          "meta": {
+            "legacyType": "card",
+            "migratedFrom": "UISchema.component"
+          }
+        },
+        {
+          "id": "sec_summary_container",
+          "type": "container",
+          "props": {
+            "name": "Summary",
+            "position": "top"
+          },
+          "children": ["cmp_card_1"],
+          "meta": {
+            "migratedFrom": "UISchema.section"
+          }
+        }
+      ],
+      "data": {
+        "entities": [],
+        "queries": [],
+        "states": []
+      },
+      "actions": [
+        {
+          "id": "act_legacy_1",
+          "trigger": {
+            "type": "click"
+          },
+          "effects": [
+            {
+              "type": "emit",
+              "event": "legacy.interaction",
+              "payload": {
+                "raw": {
+                  "from": "cmp_card_1",
+                  "action": "open_detail"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "design": {
+        "theme": "light",
+        "tokens": {
+          "spacingUnit": 4,
+          "radiusMd": 8
+        },
+        "breakpoints": {
+          "sm": 640,
+          "md": 768,
+          "lg": 1024
+        }
+      },
+      "constraints": [
+        {
+          "kind": "naming",
+          "rule": "component_id_should_be_stable",
+          "level": "warn",
+          "message": "legacy schema migrated; 建议后续按业务语义重命名组件 id"
+        }
+      ]
+    },
+    "compatibilityReport": {
+      "sourceVersion": "UISchema@v1",
+      "targetVersion": "AppSchemaV2",
+      "migratedAt": "<redacted-iso-timestamp>",
+      "summary": {
+        "sections": 1,
+        "legacyComponents": 1,
+        "migratedComponents": 2,
+        "interactions": 1,
+        "compatibilityScore": 95
+      },
+      "issues": [
+        {
+          "level": "info",
+          "code": "component_type_mapped",
+          "message": "组件 cmp_card_1 从 card 映射为 container",
+          "legacyPath": "$.sections[0].components[0].type",
+          "targetPath": "$.components[0].type"
+        },
+        {
+          "level": "warn",
+          "code": "interaction_degraded",
+          "message": "UISchema interactions 无结构化定义，已按 emit 动作保留原始 payload",
+          "legacyPath": "$.interactions",
+          "targetPath": "$.actions"
+        }
+      ]
+    }
+  }
+}
