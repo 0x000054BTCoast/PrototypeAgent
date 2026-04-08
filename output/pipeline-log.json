@@ -1,0 +1,9 @@
+{
+  "executed_at": "2026-04-08T06:14:44.986Z",
+  "output": [
+    "output/structure.json",
+    "frontend/*",
+    "output/prototype.svg",
+    "output/preview.html"
+  ]
+}
