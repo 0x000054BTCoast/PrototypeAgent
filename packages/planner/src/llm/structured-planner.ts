@@ -1,10 +1,10 @@
-import { PipelineError, PIPELINE_ERROR_CODES } from '../error-codes.js';
-import { LLMPlannerClient, type TokenUsage } from './client.js';
+import { PipelineError, PIPELINE_ERROR_CODES } from '../error-codes';
+import { LLMPlannerClient, type TokenUsage } from './client';
 import {
   parseRawStructuredPlan,
   toUISchemaFromStructuredPlan,
   validateStructuredPlan
-} from './schema.js';
+} from './schema';
 
 export interface StructuredPlannerArtifact {
   provider: string;

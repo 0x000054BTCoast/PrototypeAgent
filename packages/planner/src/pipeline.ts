@@ -1,5 +1,5 @@
-import { runPipeline } from './service.js';
-import { pruneRuns } from './runs.js';
+import { runPipeline } from './service';
+import { pruneRuns } from './runs';
 
 type Provider = 'auto' | 'deepseek' | 'fallback' | 'local';
 

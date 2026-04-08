@@ -1,5 +1,5 @@
-import { parsePrdToSchema } from '../../../parser/src/index.js';
-import { buildStructuredPlanningPrompt } from './prompt.js';
+import { parsePrdToSchema } from '../../../parser/src/index';
+import { buildStructuredPlanningPrompt } from './prompt';
 
 export interface TokenUsage {
   prompt_tokens?: number;

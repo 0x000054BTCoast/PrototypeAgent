@@ -2,10 +2,10 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, it } from 'node:test';
-import { LLMPlannerClient } from './client.js';
-import { cleanJsonPayload, parseRawStructuredPlan, validateStructuredPlan } from './schema.js';
-import { runStructuredPlanner } from './structured-planner.js';
-import { PipelineError, PIPELINE_ERROR_CODES } from '../error-codes.js';
+import { LLMPlannerClient } from './client';
+import { cleanJsonPayload, parseRawStructuredPlan, validateStructuredPlan } from './schema';
+import { runStructuredPlanner } from './structured-planner';
+import { PipelineError, PIPELINE_ERROR_CODES } from '../error-codes';
 
 const fixturePrdPath = path.resolve(process.cwd(), 'fixtures/prd/sample-06-llm-stability.md');
 const fixtureExpectedPath = path.resolve(

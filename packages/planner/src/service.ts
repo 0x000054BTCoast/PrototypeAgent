@@ -5,17 +5,17 @@ import {
   migrateUISchemaToAppSchemaV2,
   normalizeAndValidateUISchemaVersion,
   type UISchema
-} from '../../schema/src/index.js';
-import { generateFrontend } from '../../codegen/src/json-to-ui.js';
-import { exportHtml, exportSvg } from '../../codegen/src/exporters.js';
-import { createStructuredLogger, type StructuredLogEvent } from './logger.js';
+} from '../../schema/src/index';
+import { generateFrontend } from '../../codegen/src/json-to-ui';
+import { exportHtml, exportSvg } from '../../codegen/src/exporters';
+import { createStructuredLogger, type StructuredLogEvent } from './logger';
 import {
   PIPELINE_ERROR_CODES,
   PipelineError,
   type PipelineErrorCode,
   asPipelineError
-} from './error-codes.js';
-import { runStructuredPlanner } from './llm/structured-planner.js';
+} from './error-codes';
+import { runStructuredPlanner } from './llm/structured-planner';
 
 export interface RunPipelineOptions {
   repoRoot?: string;
