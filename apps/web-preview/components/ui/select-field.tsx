@@ -27,7 +27,7 @@ export function SelectField({
   className,
   children,
   ...props
-}: React.SelectHTMLAttributes<HTMLSelectElement> & {
+}: Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'size'> & {
   variant?: SelectVariant;
   size?: Size;
   state?: State;

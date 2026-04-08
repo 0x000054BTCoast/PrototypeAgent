@@ -26,7 +26,7 @@ export function InputField({
   state = 'default',
   className,
   ...props
-}: React.InputHTMLAttributes<HTMLInputElement> & {
+}: Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> & {
   variant?: InputVariant;
   size?: Size;
   state?: State;
