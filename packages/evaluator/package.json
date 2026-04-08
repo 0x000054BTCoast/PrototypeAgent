@@ -10,7 +10,7 @@
     "patch": "tsx src/patch.ts",
     "build": "node -e \"console.log('build ok: @prd2prototype/evaluator')\"",
     "lint": "node -e \"console.log('lint ok: @prd2prototype/evaluator')\"",
-    "test": "node -e \"console.log('test ok: @prd2prototype/evaluator')\"",
+    "test": "node --import tsx --test src/patch-engine.test.ts",
     "typecheck": "node -e \"console.log('typecheck ok: @prd2prototype/evaluator')\""
   }
 }
