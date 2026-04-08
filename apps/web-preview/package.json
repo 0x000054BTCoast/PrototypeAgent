@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "node -e \"console.log('build ok: web-preview')\"",
+    "build": "next build",
     "start": "next start",
     "lint": "node -e \"console.log('lint ok: web-preview')\"",
     "test": "node -e \"console.log('test ok: web-preview')\"",
