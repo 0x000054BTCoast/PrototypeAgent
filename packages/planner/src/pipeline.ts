@@ -1,12 +1,17 @@
-import fs from "node:fs";
-import path from "node:path";
-import { performance } from "node:perf_hooks";
-import type { UISchema } from "../../schema/src/index.js";
-import { parsePrdToSchema } from "../../parser/src/index.js";
-import { generateFrontend } from "../../codegen/src/json-to-ui.js";
-import { exportHtml, exportSvg } from "../../codegen/src/exporters.js";
-import { createStructuredLogger } from "./logger.js";
-import { PIPELINE_ERROR_CODES, PipelineError, type PipelineErrorCode, asPipelineError } from "./error-codes.js";
+import fs from 'node:fs';
+import path from 'node:path';
+import { performance } from 'node:perf_hooks';
+import { migrateUISchemaToAppSchemaV2, type UISchema } from '../../schema/src/index.js';
+import { parsePrdToSchema } from '../../parser/src/index.js';
+import { generateFrontend } from '../../codegen/src/json-to-ui.js';
+import { exportHtml, exportSvg } from '../../codegen/src/exporters.js';
+import { createStructuredLogger } from './logger.js';
+import {
+  PIPELINE_ERROR_CODES,
+  PipelineError,
+  type PipelineErrorCode,
+  asPipelineError
+} from './error-codes.js';
 
 const logger = createStructuredLogger();
 
@@ -35,10 +40,14 @@ const runWithRetry = <T>(phase: string, errorCode: PipelineErrorCode, fn: () => 
     }
   }
 
-  throw new PipelineError(PIPELINE_ERROR_CODES.qa.executionFailed, "Pipeline failed unexpectedly");
+  throw new PipelineError(PIPELINE_ERROR_CODES.qa.executionFailed, 'Pipeline failed unexpectedly');
 };
 
-const assertOutputExists = (targetPath: string, errorCode: PipelineErrorCode, repoRoot: string): void => {
+const assertOutputExists = (
+  targetPath: string,
+  errorCode: PipelineErrorCode,
+  repoRoot: string
+): void => {
   if (fs.existsSync(targetPath)) {
     return;
   }
@@ -49,22 +58,22 @@ const assertOutputExists = (targetPath: string, errorCode: PipelineErrorCode, re
 
 const totalStart = performance.now();
 const repoRoot = process.env.INIT_CWD ?? process.cwd();
-const inputPath = path.resolve(repoRoot, "input/prd.md");
-const outputDir = path.resolve(repoRoot, "output");
+const inputPath = path.resolve(repoRoot, 'input/prd.md');
+const outputDir = path.resolve(repoRoot, 'output');
 
 fs.mkdirSync(outputDir, { recursive: true });
 
 let pipelineError: unknown;
 
 try {
-  logger.info("pipeline", "pipeline_started", {
+  logger.info('pipeline', 'pipeline_started', {
     input: path.relative(repoRoot, inputPath)
   });
 
-  runWithRetry("prd_parser", PIPELINE_ERROR_CODES.parser.parseFailed, () => {
-    let markdown = "";
+  runWithRetry('prd_parser', PIPELINE_ERROR_CODES.parser.parseFailed, () => {
+    let markdown = '';
     try {
-      markdown = fs.readFileSync(inputPath, "utf8");
+      markdown = fs.readFileSync(inputPath, 'utf8');
     } catch (error) {
       throw asPipelineError(
         PIPELINE_ERROR_CODES.parser.readInputFailed,
@@ -76,7 +85,10 @@ try {
     const schema = parsePrdToSchema(markdown);
 
     try {
-      fs.writeFileSync(path.resolve(outputDir, "structure.json"), `${JSON.stringify(schema, null, 2)}\n`);
+      fs.writeFileSync(
+        path.resolve(outputDir, 'structure.json'),
+        `${JSON.stringify(schema, null, 2)}\n`
+      );
     } catch (error) {
       throw asPipelineError(
         PIPELINE_ERROR_CODES.schema.serializeFailed,
@@ -86,54 +98,99 @@ try {
     }
   });
 
-  const schema = runWithRetry("schema_loader", PIPELINE_ERROR_CODES.schema.deserializeFailed, () => {
-    const raw = fs.readFileSync(path.resolve(outputDir, "structure.json"), "utf8");
-    const parsed = JSON.parse(raw) as Partial<UISchema>;
+  const schema = runWithRetry(
+    'schema_loader',
+    PIPELINE_ERROR_CODES.schema.deserializeFailed,
+    () => {
+      const raw = fs.readFileSync(path.resolve(outputDir, 'structure.json'), 'utf8');
+      const parsed = JSON.parse(raw) as Partial<UISchema>;
 
-    const hasSections = Array.isArray(parsed.sections);
-    if (!hasSections) {
-      throw new PipelineError(
-        PIPELINE_ERROR_CODES.schema.validateFailed,
-        `[${PIPELINE_ERROR_CODES.schema.validateFailed}] structure.json missing 'sections' array`
-      );
+      const hasSections = Array.isArray(parsed.sections);
+      if (!hasSections) {
+        throw new PipelineError(
+          PIPELINE_ERROR_CODES.schema.validateFailed,
+          `[${PIPELINE_ERROR_CODES.schema.validateFailed}] structure.json missing 'sections' array`
+        );
+      }
+
+      return parsed as UISchema;
     }
+  );
 
-    return parsed as UISchema;
-  });
-
-  runWithRetry("ui_generator", PIPELINE_ERROR_CODES.codegen.uiGenerationFailed, () => {
+  runWithRetry('ui_generator', PIPELINE_ERROR_CODES.codegen.uiGenerationFailed, () => {
     generateFrontend(schema);
   });
 
-  runWithRetry("svg_exporter", PIPELINE_ERROR_CODES.codegen.svgExportFailed, () => {
-    fs.writeFileSync(path.resolve(outputDir, "prototype.svg"), `${exportSvg(schema)}\n`);
+  runWithRetry('schema_migration_v2', PIPELINE_ERROR_CODES.schema.serializeFailed, () => {
+    const { appSchema, compatibilityReport } = migrateUISchemaToAppSchemaV2(schema);
+    fs.writeFileSync(
+      path.resolve(outputDir, 'app-schema-v2.json'),
+      `${JSON.stringify(appSchema, null, 2)}\n`
+    );
+    fs.writeFileSync(
+      path.resolve(outputDir, 'compatibility-report.json'),
+      `${JSON.stringify(compatibilityReport, null, 2)}\n`
+    );
   });
 
-  runWithRetry("html_exporter", PIPELINE_ERROR_CODES.codegen.htmlExportFailed, () => {
-    fs.writeFileSync(path.resolve(outputDir, "preview.html"), `${exportHtml(schema)}\n`);
+  runWithRetry('svg_exporter', PIPELINE_ERROR_CODES.codegen.svgExportFailed, () => {
+    fs.writeFileSync(path.resolve(outputDir, 'prototype.svg'), `${exportSvg(schema)}\n`);
   });
 
-  runWithRetry("qa_output_check", PIPELINE_ERROR_CODES.qa.outputMissing, () => {
-    assertOutputExists(path.resolve(outputDir, "structure.json"), PIPELINE_ERROR_CODES.qa.outputMissing, repoRoot);
-    assertOutputExists(path.resolve(outputDir, "prototype.svg"), PIPELINE_ERROR_CODES.qa.outputMissing, repoRoot);
-    assertOutputExists(path.resolve(outputDir, "preview.html"), PIPELINE_ERROR_CODES.qa.outputMissing, repoRoot);
+  runWithRetry('html_exporter', PIPELINE_ERROR_CODES.codegen.htmlExportFailed, () => {
+    fs.writeFileSync(path.resolve(outputDir, 'preview.html'), `${exportHtml(schema)}\n`);
+  });
+
+  runWithRetry('qa_output_check', PIPELINE_ERROR_CODES.qa.outputMissing, () => {
     assertOutputExists(
-      path.resolve(repoRoot, "apps/web-preview/lib/structure.json"),
+      path.resolve(outputDir, 'structure.json'),
+      PIPELINE_ERROR_CODES.qa.outputMissing,
+      repoRoot
+    );
+    assertOutputExists(
+      path.resolve(outputDir, 'app-schema-v2.json'),
+      PIPELINE_ERROR_CODES.qa.outputMissing,
+      repoRoot
+    );
+    assertOutputExists(
+      path.resolve(outputDir, 'compatibility-report.json'),
+      PIPELINE_ERROR_CODES.qa.outputMissing,
+      repoRoot
+    );
+    assertOutputExists(
+      path.resolve(outputDir, 'prototype.svg'),
+      PIPELINE_ERROR_CODES.qa.outputMissing,
+      repoRoot
+    );
+    assertOutputExists(
+      path.resolve(outputDir, 'preview.html'),
+      PIPELINE_ERROR_CODES.qa.outputMissing,
+      repoRoot
+    );
+    assertOutputExists(
+      path.resolve(repoRoot, 'apps/web-preview/lib/structure.json'),
       PIPELINE_ERROR_CODES.qa.outputMissing,
       repoRoot
     );
   });
 
-  logger.info("pipeline", "pipeline_completed", {
-    output: ["output/structure.json", "apps/web-preview/*", "output/prototype.svg", "output/preview.html"]
+  logger.info('pipeline', 'pipeline_completed', {
+    output: [
+      'output/structure.json',
+      'output/app-schema-v2.json',
+      'output/compatibility-report.json',
+      'apps/web-preview/*',
+      'output/prototype.svg',
+      'output/preview.html'
+    ]
   });
 } catch (error) {
   pipelineError = error;
   if (error instanceof PipelineError) {
-    logger.error("pipeline", error.message, error.code);
+    logger.error('pipeline', error.message, error.code);
   } else {
     logger.error(
-      "pipeline",
+      'pipeline',
       error instanceof Error ? error.message : String(error),
       PIPELINE_ERROR_CODES.qa.executionFailed
     );
@@ -146,9 +203,16 @@ const log = {
   trace_id: logger.traceId,
   total_duration_ms: totalDurationMs,
   events: logger.events,
-  output: ["output/structure.json", "apps/web-preview/*", "output/prototype.svg", "output/preview.html"]
+  output: [
+    'output/structure.json',
+    'output/app-schema-v2.json',
+    'output/compatibility-report.json',
+    'apps/web-preview/*',
+    'output/prototype.svg',
+    'output/preview.html'
+  ]
 };
-fs.writeFileSync(path.resolve(outputDir, "pipeline-log.json"), `${JSON.stringify(log, null, 2)}\n`);
+fs.writeFileSync(path.resolve(outputDir, 'pipeline-log.json'), `${JSON.stringify(log, null, 2)}\n`);
 
 if (pipelineError) {
   throw pipelineError;

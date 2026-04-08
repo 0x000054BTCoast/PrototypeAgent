@@ -28,14 +28,17 @@ npm run check                       # lint + test + typecheck + build
 1. **prd_parser**
    - 读取：`input/prd.md`
    - 产出：`output/structure.json`
-2. **ui_generator**
+2. **schema_migration_v2**
+   - 输入：`output/structure.json`（UISchema）
+   - 产出：`output/app-schema-v2.json`、`output/compatibility-report.json`
+3. **ui_generator**
    - 输入：`output/structure.json`
    - 产出：`apps/web-preview` 下预览依赖文件
-3. **svg_exporter**
+4. **svg_exporter**
    - 产出：`output/prototype.svg`
-4. **html_exporter**
+5. **html_exporter**
    - 产出：`output/preview.html`
-5. **log writer**
+6. **log writer**
    - 产出：`output/pipeline-log.json`
 
 ## 3. 当前流程 vs 目标流程
@@ -63,4 +66,5 @@ npm run check                       # lint + test + typecheck + build
   - A: 需要重新执行 `npm run pipeline` 刷新生成产物。
 - **Q: 如何确认 pipeline 真的执行完成？**
   - A: 检查 `output/pipeline-log.json` 的 `executed_at` 时间戳是否更新。
-
+- **Q: 旧版 `output/structure.json` 如何升级到 AppSchemaV2？**
+  - A: 直接执行 `npm run pipeline`，会自动生成 `output/app-schema-v2.json` 与兼容性报告 `output/compatibility-report.json`。
