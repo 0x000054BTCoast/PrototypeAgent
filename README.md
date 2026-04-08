@@ -25,6 +25,15 @@ npm run pipeline
 npm run baseline
 ```
 
+## Parser Evaluation
+
+```bash
+npm run eval:parser
+# outputs comparable scoring reports:
+# - output/parser-eval-report.json
+# - output/parser-eval-report.md
+```
+
 ## File Tree
 
 ```text
