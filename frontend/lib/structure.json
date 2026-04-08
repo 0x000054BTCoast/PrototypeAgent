@@ -1,0 +1,103 @@
+{
+  "page_name": "analytics_workspace",
+  "layout": {
+    "type": "grid",
+    "columns": 24
+  },
+  "sections": [
+    {
+      "id": "section_1",
+      "name": "analytics_workspace",
+      "position": "center",
+      "components": []
+    },
+    {
+      "id": "section_2",
+      "name": "header",
+      "position": "center",
+      "components": [
+        {
+          "id": "component_1",
+          "type": "card",
+          "props": {
+            "label": "Card: KPI summary",
+            "title": "- Card: KPI summary",
+            "content": "- Card: KPI summary"
+          },
+          "style": {},
+          "children": []
+        },
+        {
+          "id": "component_2",
+          "type": "button",
+          "props": {
+            "label": "Button: Create report",
+            "title": "- Button: Create report",
+            "content": "- Button: Create report"
+          },
+          "style": {},
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "section_3",
+      "name": "main_dashboard",
+      "position": "center",
+      "components": [
+        {
+          "id": "component_3",
+          "type": "chart",
+          "props": {
+            "label": "Chart: Revenue by month",
+            "title": "- Chart: Revenue by month",
+            "content": "- Chart: Revenue by month"
+          },
+          "style": {},
+          "children": []
+        },
+        {
+          "id": "component_4",
+          "type": "table",
+          "props": {
+            "label": "Table: Top customers",
+            "title": "- Table: Top customers",
+            "content": "- Table: Top customers"
+          },
+          "style": {},
+          "children": []
+        },
+        {
+          "id": "component_5",
+          "type": "card",
+          "props": {
+            "label": "Card: Alerts",
+            "title": "- Card: Alerts",
+            "content": "- Card: Alerts"
+          },
+          "style": {},
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "section_4",
+      "name": "footer",
+      "position": "center",
+      "components": [
+        {
+          "id": "component_6",
+          "type": "text",
+          "props": {
+            "label": "Text: Last synced timestamp",
+            "title": "- Text: Last synced timestamp",
+            "content": "- Text: Last synced timestamp"
+          },
+          "style": {},
+          "children": []
+        }
+      ]
+    }
+  ],
+  "interactions": []
+}
