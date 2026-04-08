@@ -8,6 +8,7 @@
 npm run pipeline                    # 运行完整生成链路
 npm run baseline                    # 基线复现实验（prd -> structure -> frontend + 耗时）
 npm run patch -- "<instruction>"    # 对 output/structure.json 做增量修改
+npm run dag [schemaPath] [outPath]    # 由 AppSchema 生成任务 DAG（tokens→primitives→routes→features→tests）
 npm run build                       # turbo 构建
 npm run lint                        # eslint
 npm run test                        # turbo 测试
@@ -68,3 +69,19 @@ npm run check                       # lint + test + typecheck + build
   - A: 检查 `output/pipeline-log.json` 的 `executed_at` 时间戳是否更新。
 - **Q: 旧版 `output/structure.json` 如何升级到 AppSchemaV2？**
   - A: 直接执行 `npm run pipeline`，会自动生成 `output/app-schema-v2.json` 与兼容性报告 `output/compatibility-report.json`。
+
+## 5. 从 schema 生成 DAG 任务图
+
+可用命令：
+
+```bash
+npm run dag
+# 等价于：tsx scripts/generate-dag.ts output/app-schema-v2.json output/task-dag.md
+
+# 也支持自定义输入/输出路径
+npm run dag -- fixtures/schema-references/sample-01-dashboard.json output/sample-01-task-dag.md
+```
+
+该命令会输出 Mermaid 流程图，显式展示 `tokens → primitives → routes → features → tests` 的阶段顺序及依赖关系。
+
+默认输出：`output/task-dag.md`。
