@@ -28,7 +28,7 @@ export const PIPELINE_ERROR_CODES = {
   }
 } as const;
 
-type ValueOf<T> = T[keyof T];
+type ValueOf<T> = T extends object ? T[keyof T] : never;
 
 export type PipelineErrorCode = ValueOf<ValueOf<typeof PIPELINE_ERROR_CODES>>;
 
