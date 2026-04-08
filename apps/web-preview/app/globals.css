@@ -1,56 +1,54 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --font-sans: 'Inter';
-
-  --text-body: 0.875rem;
-  --leading-body: 1.5;
-  --text-title: 1.5rem;
-  --leading-title: 1.25;
-
-  --space-xs: 0.25rem;
-  --space-sm: 0.5rem;
-  --space-md: 1rem;
-  --space-lg: 1.5rem;
-  --space-xl: 2rem;
-  --space-2xl: 3rem;
-
-  --radius-sm: 0.5rem;
-  --radius-md: 0.75rem;
-  --radius-lg: 1rem;
-  --radius-xl: 1.5rem;
-
-  --color-bg: 210 40% 98%;
-  --color-surface: 0 0% 100%;
-  --color-surface-muted: 210 40% 96%;
-  --color-border: 214 32% 91%;
-  --color-text: 222 47% 11%;
-  --color-text-muted: 215 16% 47%;
-  --color-primary: 222 84% 5%;
-  --color-primary-foreground: 210 40% 98%;
-  --color-accent-from: 221 83% 53%;
-  --color-accent-to: 189 94% 43%;
+  color-scheme: light;
+  --bg: #f3f7fa;
+  --surface: #ffffff;
+  --surface-muted: #f8fafc;
+  --text: #0f172a;
+  --text-muted: #64748b;
+  --border: #dbe4ee;
 }
 
-.dark {
-  --color-bg: 222 47% 7%;
-  --color-surface: 222 47% 11%;
-  --color-surface-muted: 223 34% 18%;
-  --color-border: 215 28% 22%;
-  --color-text: 210 40% 98%;
-  --color-text-muted: 215 20% 72%;
-  --color-primary: 210 40% 98%;
-  --color-primary-foreground: 222 47% 11%;
-  --color-accent-from: 217 91% 60%;
-  --color-accent-to: 188 96% 45%;
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  font-family: var(--font-sans), Arial, sans-serif;
-  background-color: hsl(var(--color-bg));
-  color: hsl(var(--color-text));
-  font-size: var(--text-body);
-  line-height: var(--leading-body);
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Manrope', system-ui, sans-serif;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: rgba(100, 116, 139, 0.35);
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
 }
