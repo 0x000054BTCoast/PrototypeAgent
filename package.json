@@ -19,7 +19,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck:strict": "tsc -p tsconfig.json --noEmit && tsc -p apps/web-preview/tsconfig.json --noEmit",
-    "prepare": "husky"
+    "prepare": "husky",
+    "baseline": "tsx scripts/baseline-run.ts"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.1.0",

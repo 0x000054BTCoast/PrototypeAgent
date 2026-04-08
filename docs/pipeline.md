@@ -6,6 +6,7 @@
 
 ```bash
 npm run pipeline                    # 运行完整生成链路
+npm run baseline                    # 基线复现实验（prd -> structure -> frontend + 耗时）
 npm run patch -- "<instruction>"    # 对 output/structure.json 做增量修改
 npm run build                       # turbo 构建
 npm run lint                        # eslint
@@ -17,6 +18,7 @@ npm run check                       # lint + test + typecheck + build
 其中：
 
 - `npm run pipeline` 实际调用：`pnpm --filter @prd2prototype/planner pipeline`
+- `npm run baseline` 实际调用：`tsx scripts/baseline-run.ts`
 - `npm run patch` 实际调用：`pnpm --filter @prd2prototype/evaluator patch`
 
 ## 2. Pipeline 阶段
