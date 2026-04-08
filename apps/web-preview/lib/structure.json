@@ -1,0 +1,91 @@
+{
+  "page_name": "analytics_workspace",
+  "layout": {
+    "type": "grid",
+    "columns": 24
+  },
+  "sections": [
+    {
+      "id": "section_1",
+      "name": "analytics_workspace",
+      "position": "center",
+      "components": []
+    },
+    {
+      "id": "section_2",
+      "name": "header",
+      "position": "top",
+      "components": [
+        {
+          "id": "component_2",
+          "type": "card",
+          "props": {
+            "title": "- Card: KPI summary"
+          },
+          "style": {},
+          "children": []
+        },
+        {
+          "id": "component_3",
+          "type": "button",
+          "props": {
+            "label": "Button: Create report"
+          },
+          "style": {},
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "section_3",
+      "name": "main_dashboard",
+      "position": "center",
+      "components": [
+        {
+          "id": "component_4",
+          "type": "chart",
+          "props": {
+            "title": "- Chart: Revenue by month"
+          },
+          "style": {},
+          "children": []
+        },
+        {
+          "id": "component_5",
+          "type": "table",
+          "props": {
+            "title": "- Table: Top customers"
+          },
+          "style": {},
+          "children": []
+        },
+        {
+          "id": "component_6",
+          "type": "card",
+          "props": {
+            "title": "- Card: Alerts"
+          },
+          "style": {},
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "section_4",
+      "name": "footer",
+      "position": "bottom",
+      "components": [
+        {
+          "id": "component_7",
+          "type": "text",
+          "props": {
+            "content": "Text: Last synced timestamp"
+          },
+          "style": {},
+          "children": []
+        }
+      ]
+    }
+  ],
+  "interactions": []
+}

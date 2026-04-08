@@ -1,0 +1,9 @@
+{
+  "name": "@prd2prototype/codegen",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@prd2prototype/schema": "1.0.0"
+  }
+}

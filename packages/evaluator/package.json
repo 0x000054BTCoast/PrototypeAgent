@@ -1,0 +1,12 @@
+{
+  "name": "@prd2prototype/evaluator",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@prd2prototype/schema": "1.0.0"
+  },
+  "scripts": {
+    "patch": "tsx src/patch.ts"
+  }
+}
