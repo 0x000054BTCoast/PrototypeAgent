@@ -577,6 +577,28 @@ export interface AppSchemaValidationError {
   issues: AppSchemaValidationIssue[];
 }
 
+export interface AppSchemaMigrationIssue {
+  level: 'info' | 'warn';
+  code: string;
+  message: string;
+  legacyPath?: string;
+  targetPath?: string;
+}
+
+export interface UISchemaCompatibilityReport {
+  sourceVersion: 'UISchema@v1';
+  targetVersion: 'AppSchemaV2';
+  migratedAt: string;
+  summary: {
+    sections: number;
+    legacyComponents: number;
+    migratedComponents: number;
+    interactions: number;
+    compatibilityScore: number;
+  };
+  issues: AppSchemaMigrationIssue[];
+}
+
 function formatIssuePath(path: Array<string | number>): string {
   if (path.length === 0) {
     return '$';
@@ -633,4 +655,185 @@ export function assertValidAppSchemaV2(input: unknown): AppSchemaV2 {
 
   const detail = result.error.issues.map((item) => `- ${item.path}: ${item.message}`).join('\n');
   throw new Error(`${result.error.summary}\n${detail}`);
+}
+
+const toRoutePath = (pageName: string): string => {
+  const normalized = pageName
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return normalized ? `/${normalized}` : '/';
+};
+
+const toViewTitle = (pageName: string): string =>
+  pageName
+    .split('_')
+    .map((part) => (part ? `${part[0]?.toUpperCase() ?? ''}${part.slice(1)}` : ''))
+    .join(' ')
+    .trim() || 'Generated View';
+
+const mapComponentType = (type: UIComponent['type']): AppComponentV2['type'] => {
+  if (type === 'card') {
+    return 'container';
+  }
+  return type;
+};
+
+const estimateCompatibilityScore = (schema: UISchema, migratedComponentCount: number): number => {
+  const legacyComponentCount = schema.sections.reduce(
+    (sum, section) => sum + section.components.length,
+    0
+  );
+  const missing = Math.max(legacyComponentCount - migratedComponentCount, 0);
+  const interactionPenalty = schema.interactions.length > 0 ? 5 : 0;
+  const base = 100 - missing * 10 - interactionPenalty;
+  return Math.max(0, Math.min(100, base));
+};
+
+export function migrateUISchemaToAppSchemaV2(schema: UISchema): {
+  appSchema: AppSchemaV2;
+  compatibilityReport: UISchemaCompatibilityReport;
+} {
+  const issues: AppSchemaMigrationIssue[] = [];
+  const components: AppComponentV2[] = [];
+  const rootComponentIds: string[] = [];
+
+  for (const section of schema.sections) {
+    const sectionContainerId = `${section.id}_container`;
+    const sectionChildIds: string[] = [];
+
+    for (const component of section.components) {
+      sectionChildIds.push(component.id);
+      components.push({
+        id: component.id,
+        type: mapComponentType(component.type),
+        props: component.props,
+        style: component.style,
+        children: component.children.map((child) => child.id),
+        meta: {
+          legacyType: component.type,
+          migratedFrom: 'UISchema.component'
+        }
+      });
+
+      if (component.type === 'card') {
+        issues.push({
+          level: 'info',
+          code: 'component_type_mapped',
+          message: `组件 ${component.id} 从 card 映射为 container`,
+          legacyPath: `$.sections[${schema.sections.indexOf(section)}].components[${section.components.indexOf(component)}].type`,
+          targetPath: `$.components[${components.length - 1}].type`
+        });
+      }
+    }
+
+    components.push({
+      id: sectionContainerId,
+      type: 'container',
+      props: {
+        name: section.name,
+        position: section.position
+      },
+      children: sectionChildIds,
+      meta: {
+        migratedFrom: 'UISchema.section'
+      }
+    });
+    rootComponentIds.push(sectionContainerId);
+  }
+
+  if (schema.interactions.length > 0) {
+    issues.push({
+      level: 'warn',
+      code: 'interaction_degraded',
+      message: 'UISchema interactions 无结构化定义，已按 emit 动作保留原始 payload',
+      legacyPath: '$.interactions',
+      targetPath: '$.actions'
+    });
+  }
+
+  const appSchema: AppSchemaV2 = {
+    routes: [
+      {
+        id: `route_${schema.page_name || 'main'}`,
+        path: toRoutePath(schema.page_name),
+        name: schema.page_name || 'main',
+        view: `view_${schema.page_name || 'main'}`
+      }
+    ],
+    views: [
+      {
+        id: `view_${schema.page_name || 'main'}`,
+        title: toViewTitle(schema.page_name),
+        layout: {
+          type: schema.layout.type,
+          columns: schema.layout.columns,
+          gap: 16
+        },
+        rootComponentIds
+      }
+    ],
+    components,
+    data: {
+      entities: [],
+      queries: [],
+      states: []
+    },
+    actions: schema.interactions.map((interaction, index) => ({
+      id: `act_legacy_${index + 1}`,
+      trigger: {
+        type: 'click'
+      },
+      effects: [
+        {
+          type: 'emit',
+          event: 'legacy.interaction',
+          payload: { raw: interaction }
+        }
+      ]
+    })),
+    design: {
+      theme: 'light',
+      tokens: {
+        spacingUnit: 4,
+        radiusMd: 8
+      },
+      breakpoints: {
+        sm: 640,
+        md: 768,
+        lg: 1024
+      }
+    },
+    constraints: [
+      {
+        kind: 'naming',
+        rule: 'component_id_should_be_stable',
+        level: 'warn',
+        message: 'legacy schema migrated; 建议后续按业务语义重命名组件 id'
+      }
+    ]
+  };
+
+  const compatibilityReport: UISchemaCompatibilityReport = {
+    sourceVersion: 'UISchema@v1',
+    targetVersion: 'AppSchemaV2',
+    migratedAt: new Date().toISOString(),
+    summary: {
+      sections: schema.sections.length,
+      legacyComponents: schema.sections.reduce(
+        (sum, section) => sum + section.components.length,
+        0
+      ),
+      migratedComponents: components.length,
+      interactions: schema.interactions.length,
+      compatibilityScore: estimateCompatibilityScore(schema, components.length)
+    },
+    issues
+  };
+
+  return {
+    appSchema,
+    compatibilityReport
+  };
 }
