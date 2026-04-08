@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { NextResponse } from 'next/server';
-import { getRunsRoot, getRunById } from '@/lib/workbench/store';
+import { getRepoRoot, getRunById } from '@/lib/workbench/store';
 
 export async function GET(
   _: Request,
@@ -14,9 +14,9 @@ export async function GET(
     return NextResponse.json({ error: 'run_not_found' }, { status: 404 });
   }
 
+  const runDir = path.resolve(getRepoRoot(), run.runDir);
   const relativeArtifactPath = artifactPath.join('/');
-  const absolutePath = path.resolve(getRunsRoot(), id, relativeArtifactPath);
-  const runDir = path.resolve(getRunsRoot(), id);
+  const absolutePath = path.resolve(runDir, relativeArtifactPath);
 
   if (!absolutePath.startsWith(runDir)) {
     return NextResponse.json({ error: 'invalid_artifact_path' }, { status: 400 });

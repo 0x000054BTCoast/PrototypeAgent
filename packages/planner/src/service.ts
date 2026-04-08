@@ -23,6 +23,8 @@ export interface RunPipelineOptions {
   inputText?: string;
   outputDir?: string;
   runName?: string;
+  runDir?: string;
+  workspaceDir?: string;
   provider?: 'auto' | 'deepseek' | 'fallback' | 'local';
 }
 
@@ -30,7 +32,7 @@ export interface RunPipelineResult {
   runId: string;
   runName: string;
   input: string;
-  outputDir: string;
+  runDir: string;
   status: 'success' | 'failed';
   traceId: string;
   totalDurationMs: number;
@@ -41,6 +43,43 @@ export interface RunPipelineResult {
     message: string;
   };
 }
+
+const sanitizeRunName = (value: string) => value.replace(/[^a-zA-Z0-9-_]/g, '-');
+
+const timestampForDir = (date = new Date()) =>
+  date
+    .toISOString()
+    .replace(/:/g, '-')
+    .replace(/\.\d{3}Z$/, 'Z');
+
+const writeLatestPointer = (repoRoot: string, runDir: string, runId: string): void => {
+  const outputRoot = path.resolve(repoRoot, 'output');
+  fs.mkdirSync(outputRoot, { recursive: true });
+
+  fs.writeFileSync(
+    path.resolve(outputRoot, 'latest-run.json'),
+    `${JSON.stringify(
+      {
+        runId,
+        runDir: path.relative(repoRoot, runDir),
+        updatedAt: new Date().toISOString()
+      },
+      null,
+      2
+    )}\n`
+  );
+
+  const latestLink = path.resolve(outputRoot, 'latest');
+  if (fs.existsSync(latestLink)) {
+    fs.rmSync(latestLink, { recursive: true, force: true });
+  }
+
+  try {
+    fs.symlinkSync(path.relative(outputRoot, runDir), latestLink, 'junction');
+  } catch {
+    // noop: pointer file already guarantees latest lookup.
+  }
+};
 
 const runWithRetry = <T>(
   logger: ReturnType<typeof createStructuredLogger>,
@@ -88,14 +127,15 @@ const assertOutputExists = (
   throw new PipelineError(errorCode, `[${errorCode}] Missing output: ${missingPath}`);
 };
 
-const resolveOutputFiles = (repoRoot: string, outputDir: string): string[] => [
-  path.relative(repoRoot, path.resolve(outputDir, 'llm-structured.json')),
-  path.relative(repoRoot, path.resolve(outputDir, 'structure.json')),
-  path.relative(repoRoot, path.resolve(outputDir, 'app-schema-v2.json')),
-  path.relative(repoRoot, path.resolve(outputDir, 'compatibility-report.json')),
-  path.relative(repoRoot, path.resolve(repoRoot, 'apps/web-preview/lib/structure.json')),
-  path.relative(repoRoot, path.resolve(outputDir, 'prototype.svg')),
-  path.relative(repoRoot, path.resolve(outputDir, 'preview.html'))
+const resolveOutputFiles = (repoRoot: string, runDir: string): string[] => [
+  path.relative(repoRoot, path.resolve(runDir, 'input', 'prd.md')),
+  path.relative(repoRoot, path.resolve(runDir, 'artifacts', 'llm-structured.json')),
+  path.relative(repoRoot, path.resolve(runDir, 'artifacts', 'structure.json')),
+  path.relative(repoRoot, path.resolve(runDir, 'artifacts', 'app-schema-v2.json')),
+  path.relative(repoRoot, path.resolve(runDir, 'artifacts', 'compatibility-report.json')),
+  path.relative(repoRoot, path.resolve(runDir, 'output', 'prototype.svg')),
+  path.relative(repoRoot, path.resolve(runDir, 'output', 'preview.html')),
+  path.relative(repoRoot, path.resolve(runDir, 'logs', 'pipeline-log.json'))
 ];
 
 export const runPipeline = async (options: RunPipelineOptions = {}): Promise<RunPipelineResult> => {
@@ -103,26 +143,39 @@ export const runPipeline = async (options: RunPipelineOptions = {}): Promise<Run
   const totalStart = performance.now();
 
   const repoRoot = path.resolve(options.repoRoot ?? process.env.INIT_CWD ?? process.cwd());
-  const runName = options.runName?.trim() || `run-${Date.now()}`;
-  const runId = runName.replace(/[^a-zA-Z0-9-_]/g, '-');
+  const rawRunName = options.runName?.trim() || `run-${Date.now()}`;
+  const runName = sanitizeRunName(rawRunName);
+
+  const runId = runName || `run-${Date.now()}`;
 
   const inputPath = options.inputPath
     ? path.resolve(repoRoot, options.inputPath)
     : path.resolve(repoRoot, 'input/prd.md');
-  const outputDir = options.outputDir
-    ? path.resolve(repoRoot, options.outputDir)
-    : path.resolve(repoRoot, 'output', 'runs', runId);
 
-  fs.mkdirSync(outputDir, { recursive: true });
+  const generatedRunDir = path.resolve(repoRoot, 'runs', `${timestampForDir()}_${logger.traceId}`);
+  const runDir = path.resolve(
+    repoRoot,
+    options.runDir ?? options.workspaceDir ?? options.outputDir ?? generatedRunDir
+  );
 
-  const output = resolveOutputFiles(repoRoot, outputDir);
+  const artifactsDir = path.resolve(runDir, 'artifacts');
+  const logsDir = path.resolve(runDir, 'logs');
+  const visualOutputDir = path.resolve(runDir, 'output');
+  const inputCopyPath = path.resolve(runDir, 'input', 'prd.md');
+
+  fs.mkdirSync(artifactsDir, { recursive: true });
+  fs.mkdirSync(logsDir, { recursive: true });
+  fs.mkdirSync(visualOutputDir, { recursive: true });
+  fs.mkdirSync(path.dirname(inputCopyPath), { recursive: true });
+
+  const output = resolveOutputFiles(repoRoot, runDir);
 
   let pipelineError: unknown;
 
   try {
     logger.info('pipeline', 'pipeline_started', {
       input: options.inputText ? 'inline_text' : path.relative(repoRoot, inputPath),
-      output_dir: path.relative(repoRoot, outputDir),
+      run_dir: path.relative(repoRoot, runDir),
       provider: options.provider ?? 'auto'
     });
 
@@ -143,17 +196,19 @@ export const runPipeline = async (options: RunPipelineOptions = {}): Promise<Run
       }
     }
 
+    fs.writeFileSync(inputCopyPath, markdown);
+
     try {
       const { schema, artifact } = await runStructuredPlanner(markdown, {
         preferredProvider: options.provider
       });
 
       fs.writeFileSync(
-        path.resolve(outputDir, 'llm-structured.json'),
+        path.resolve(artifactsDir, 'llm-structured.json'),
         `${JSON.stringify(artifact, null, 2)}\n`
       );
       fs.writeFileSync(
-        path.resolve(outputDir, 'structure.json'),
+        path.resolve(artifactsDir, 'structure.json'),
         `${JSON.stringify(schema, null, 2)}\n`
       );
 
@@ -175,7 +230,7 @@ export const runPipeline = async (options: RunPipelineOptions = {}): Promise<Run
 
     runWithRetry(logger, 'prd_parser', PIPELINE_ERROR_CODES.parser.parseFailed, () => {
       assertOutputExists(
-        path.resolve(outputDir, 'llm-structured.json'),
+        path.resolve(artifactsDir, 'llm-structured.json'),
         PIPELINE_ERROR_CODES.qa.outputMissing,
         repoRoot
       );
@@ -186,7 +241,7 @@ export const runPipeline = async (options: RunPipelineOptions = {}): Promise<Run
       'schema_loader',
       PIPELINE_ERROR_CODES.schema.deserializeFailed,
       () => {
-        const raw = fs.readFileSync(path.resolve(outputDir, 'structure.json'), 'utf8');
+        const raw = fs.readFileSync(path.resolve(artifactsDir, 'structure.json'), 'utf8');
         const parsed = JSON.parse(raw) as Partial<UISchema>;
 
         let versionChecked: UISchema;
@@ -202,8 +257,7 @@ export const runPipeline = async (options: RunPipelineOptions = {}): Promise<Run
           );
         }
 
-        const hasSections = Array.isArray(versionChecked.sections);
-        if (!hasSections) {
+        if (!Array.isArray(versionChecked.sections)) {
           throw new PipelineError(
             PIPELINE_ERROR_CODES.schema.validateFailed,
             `[${PIPELINE_ERROR_CODES.schema.validateFailed}] structure.json missing 'sections' array`
@@ -215,62 +269,57 @@ export const runPipeline = async (options: RunPipelineOptions = {}): Promise<Run
     );
 
     runWithRetry(logger, 'ui_generator', PIPELINE_ERROR_CODES.codegen.uiGenerationFailed, () => {
-      generateFrontend(schema);
+      generateFrontend(schema, {}, { targetRoot: path.resolve(repoRoot, 'apps/web-preview') });
     });
 
     runWithRetry(logger, 'schema_migration_v2', PIPELINE_ERROR_CODES.schema.serializeFailed, () => {
       const { appSchema, compatibilityReport } = migrateUISchemaToAppSchemaV2(schema);
       fs.writeFileSync(
-        path.resolve(outputDir, 'app-schema-v2.json'),
+        path.resolve(artifactsDir, 'app-schema-v2.json'),
         `${JSON.stringify(appSchema, null, 2)}\n`
       );
       fs.writeFileSync(
-        path.resolve(outputDir, 'compatibility-report.json'),
+        path.resolve(artifactsDir, 'compatibility-report.json'),
         `${JSON.stringify(compatibilityReport, null, 2)}\n`
       );
     });
 
     runWithRetry(logger, 'svg_exporter', PIPELINE_ERROR_CODES.codegen.svgExportFailed, () => {
-      fs.writeFileSync(path.resolve(outputDir, 'prototype.svg'), `${exportSvg(schema)}\n`);
+      fs.writeFileSync(path.resolve(visualOutputDir, 'prototype.svg'), `${exportSvg(schema)}\n`);
     });
 
     runWithRetry(logger, 'html_exporter', PIPELINE_ERROR_CODES.codegen.htmlExportFailed, () => {
-      fs.writeFileSync(path.resolve(outputDir, 'preview.html'), `${exportHtml(schema)}\n`);
+      fs.writeFileSync(path.resolve(visualOutputDir, 'preview.html'), `${exportHtml(schema)}\n`);
     });
 
     runWithRetry(logger, 'qa_output_check', PIPELINE_ERROR_CODES.qa.outputMissing, () => {
       assertOutputExists(
-        path.resolve(outputDir, 'llm-structured.json'),
+        path.resolve(artifactsDir, 'llm-structured.json'),
         PIPELINE_ERROR_CODES.qa.outputMissing,
         repoRoot
       );
       assertOutputExists(
-        path.resolve(outputDir, 'structure.json'),
+        path.resolve(artifactsDir, 'structure.json'),
         PIPELINE_ERROR_CODES.qa.outputMissing,
         repoRoot
       );
       assertOutputExists(
-        path.resolve(outputDir, 'app-schema-v2.json'),
+        path.resolve(artifactsDir, 'app-schema-v2.json'),
         PIPELINE_ERROR_CODES.qa.outputMissing,
         repoRoot
       );
       assertOutputExists(
-        path.resolve(outputDir, 'compatibility-report.json'),
+        path.resolve(artifactsDir, 'compatibility-report.json'),
         PIPELINE_ERROR_CODES.qa.outputMissing,
         repoRoot
       );
       assertOutputExists(
-        path.resolve(outputDir, 'prototype.svg'),
+        path.resolve(visualOutputDir, 'prototype.svg'),
         PIPELINE_ERROR_CODES.qa.outputMissing,
         repoRoot
       );
       assertOutputExists(
-        path.resolve(outputDir, 'preview.html'),
-        PIPELINE_ERROR_CODES.qa.outputMissing,
-        repoRoot
-      );
-      assertOutputExists(
-        path.resolve(repoRoot, 'apps/web-preview/lib/structure.json'),
+        path.resolve(visualOutputDir, 'preview.html'),
         PIPELINE_ERROR_CODES.qa.outputMissing,
         repoRoot
       );
@@ -304,15 +353,16 @@ export const runPipeline = async (options: RunPipelineOptions = {}): Promise<Run
   };
 
   fs.writeFileSync(
-    path.resolve(outputDir, 'pipeline-log.json'),
+    path.resolve(logsDir, 'pipeline-log.json'),
     `${JSON.stringify(pipelineLog, null, 2)}\n`
   );
+  writeLatestPointer(repoRoot, runDir, runId);
 
   const result: RunPipelineResult = {
     runId,
     runName,
     input: options.inputText ? 'inline_text' : path.relative(repoRoot, inputPath),
-    outputDir: path.relative(repoRoot, outputDir),
+    runDir: path.relative(repoRoot, runDir),
     status,
     traceId: logger.traceId,
     totalDurationMs,

@@ -3,7 +3,7 @@
 将产品需求文档（PRD）快速转成可预览前端原型的 Monorepo 工程。
 
 - 输入：`input/prd.md`
-- 输出：`output/structure.json`、`output/preview.html`、`output/prototype.svg`、`apps/web-preview` 预览应用
+- 输出：`runs/<runId>/...` 分层产物 + `apps/web-preview` 预览应用
 
 ## 1. 仓库结构
 
@@ -11,11 +11,20 @@
 project-root/
   input/                      # PRD 输入目录
     prd.md
-  output/                     # 生成产物
-    structure.json
-    preview.html
-    prototype.svg
-    pipeline-log.json
+  runs/                       # 每次运行一个目录（自动生成）
+    2026-04-08T12-30-45Z_<traceId>/
+      input/prd.md
+      artifacts/
+        llm-structured.json
+        structure.json
+        app-schema-v2.json
+      output/
+        preview.html
+        prototype.svg
+      logs/pipeline-log.json
+  output/                     # 最新运行快捷引用
+    latest -> ../runs/<runId>/ (软链接，若系统支持)
+    latest-run.json
   packages/
     schema/                   # 数据结构约束与校验
     parser/                   # PRD 解析
@@ -68,10 +77,11 @@ pnpm pipeline
 
 运行后重点查看：
 
-- `output/structure.json`
-- `output/preview.html`
-- `output/prototype.svg`
-- `output/pipeline-log.json`
+- `runs/<runId>/artifacts/structure.json`
+- `runs/<runId>/output/preview.html`
+- `runs/<runId>/output/prototype.svg`
+- `runs/<runId>/logs/pipeline-log.json`
+- `output/latest-run.json`（默认 latest 指针）
 
 ### 3.4 启动前端预览
 
@@ -81,6 +91,17 @@ pnpm dev
 ```
 
 浏览器访问终端提示地址（通常是 `http://localhost:3000`）。
+
+### 3.5 运行目录与清理
+
+```bash
+# 指定本次运行目录（两个参数等价）
+pnpm pipeline --run-dir runs/my-debug-run
+pnpm pipeline --workspace-dir runs/my-debug-run
+
+# 清理旧运行（例：保留最近 20 个，且删除 7 天前数据）
+pnpm runs:prune -- --keep 20 --days 7
+```
 
 ## 4. 常用命令速查
 
