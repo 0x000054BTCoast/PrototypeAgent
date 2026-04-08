@@ -6,6 +6,9 @@
   "exports": {
     ".": "./src/index.ts"
   },
+  "dependencies": {
+    "zod": "^3.24.4"
+  },
   "scripts": {
     "build": "node -e \"console.log('build ok: @prd2prototype/schema')\"",
     "lint": "node -e \"console.log('lint ok: @prd2prototype/schema')\"",
