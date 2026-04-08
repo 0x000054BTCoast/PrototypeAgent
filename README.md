@@ -5,6 +5,8 @@
 ```bash
 npm install
 npm run pipeline
+# or run baseline (prd -> structure.json -> frontend with timing stats)
+npm run baseline
 ```
 
 ## Run Frontend
@@ -19,6 +21,8 @@ npm run dev
 ```bash
 npm run patch -- "add button to header interaction"
 npm run pipeline
+# or run baseline (prd -> structure.json -> frontend with timing stats)
+npm run baseline
 ```
 
 ## File Tree
