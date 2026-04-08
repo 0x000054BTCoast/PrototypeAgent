@@ -1,0 +1,126 @@
+{
+  "routes": [
+    {
+      "id": "route_settings",
+      "path": "/settings",
+      "name": "settings",
+      "view": "view_settings"
+    }
+  ],
+  "views": [
+    {
+      "id": "view_settings",
+      "title": "系统设置",
+      "layout": {
+        "type": "grid",
+        "columns": 24,
+        "gap": 16
+      },
+      "rootComponentIds": ["cmp_settings_root"]
+    }
+  ],
+  "components": [
+    {
+      "id": "cmp_settings_root",
+      "type": "container",
+      "props": {
+        "direction": "vertical",
+        "gap": 12
+      },
+      "children": ["cmp_profile_form", "cmp_save_btn"]
+    },
+    {
+      "id": "cmp_profile_form",
+      "type": "form",
+      "props": {
+        "title": "账户信息"
+      },
+      "children": ["cmp_name_input", "cmp_email_input"]
+    },
+    {
+      "id": "cmp_name_input",
+      "type": "input",
+      "props": {
+        "placeholder": "姓名"
+      }
+    },
+    {
+      "id": "cmp_email_input",
+      "type": "input",
+      "props": {
+        "placeholder": "邮箱"
+      }
+    },
+    {
+      "id": "cmp_save_btn",
+      "type": "button",
+      "props": {
+        "label": "保存设置"
+      }
+    }
+  ],
+  "data": {
+    "entities": [
+      {
+        "id": "session",
+        "shape": {
+          "userId": "string",
+          "role": "string"
+        }
+      }
+    ],
+    "queries": [
+      {
+        "id": "q_bootstrap",
+        "source": "local"
+      }
+    ],
+    "states": [
+      {
+        "id": "loading",
+        "type": "boolean",
+        "initial": false
+      }
+    ]
+  },
+  "actions": [
+    {
+      "id": "act_save_settings",
+      "trigger": {
+        "type": "click",
+        "componentId": "cmp_save_btn"
+      },
+      "effects": [
+        {
+          "type": "emit",
+          "event": "settings.save_requested"
+        }
+      ]
+    }
+  ],
+  "design": {
+    "theme": "light",
+    "tokens": {
+      "colorPrimary": "#2563eb",
+      "radiusMd": 8,
+      "spacingUnit": 4
+    },
+    "breakpoints": {
+      "sm": 640,
+      "md": 768,
+      "lg": 1024
+    }
+  },
+  "constraints": [
+    {
+      "kind": "a11y",
+      "rule": "interactive_requires_label",
+      "level": "error"
+    },
+    {
+      "kind": "performance",
+      "rule": "first_screen_components_under_30",
+      "level": "warn"
+    }
+  ]
+}

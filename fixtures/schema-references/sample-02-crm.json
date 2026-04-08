@@ -1,0 +1,142 @@
+{
+  "routes": [
+    {
+      "id": "route_crm",
+      "path": "/crm",
+      "name": "crm",
+      "view": "view_crm"
+    }
+  ],
+  "views": [
+    {
+      "id": "view_crm",
+      "title": "CRM 客户中心",
+      "layout": {
+        "type": "grid",
+        "columns": 24,
+        "gap": 16
+      },
+      "rootComponentIds": ["cmp_crm_root"]
+    }
+  ],
+  "components": [
+    {
+      "id": "cmp_crm_root",
+      "type": "container",
+      "props": {
+        "direction": "vertical",
+        "gap": 12
+      },
+      "children": ["cmp_search_input", "cmp_customer_table", "cmp_open_customer"]
+    },
+    {
+      "id": "cmp_search_input",
+      "type": "input",
+      "props": {
+        "placeholder": "搜索客户名或邮箱"
+      },
+      "bindings": [
+        {
+          "prop": "value",
+          "from": "state.searchKeyword"
+        }
+      ]
+    },
+    {
+      "id": "cmp_customer_table",
+      "type": "table",
+      "props": {
+        "columns": ["name", "owner", "stage"]
+      }
+    },
+    {
+      "id": "cmp_open_customer",
+      "type": "button",
+      "props": {
+        "label": "查看客户详情"
+      }
+    }
+  ],
+  "data": {
+    "entities": [
+      {
+        "id": "customer",
+        "shape": {
+          "id": "string",
+          "name": "string",
+          "stage": "string",
+          "owner": "string"
+        }
+      }
+    ],
+    "queries": [
+      {
+        "id": "q_customers",
+        "source": "rest",
+        "endpoint": "/api/customers",
+        "method": "GET"
+      }
+    ],
+    "states": [
+      {
+        "id": "searchKeyword",
+        "type": "string",
+        "initial": ""
+      }
+    ]
+  },
+  "actions": [
+    {
+      "id": "act_search_change",
+      "trigger": {
+        "type": "change",
+        "componentId": "cmp_search_input"
+      },
+      "effects": [
+        {
+          "type": "set_state",
+          "target": "searchKeyword",
+          "value": "{{input.value}}"
+        }
+      ]
+    },
+    {
+      "id": "act_open_customer",
+      "trigger": {
+        "type": "click",
+        "componentId": "cmp_open_customer"
+      },
+      "effects": [
+        {
+          "type": "navigate",
+          "to": "/crm/customer/:id"
+        }
+      ]
+    }
+  ],
+  "design": {
+    "theme": "light",
+    "tokens": {
+      "colorPrimary": "#2563eb",
+      "radiusMd": 8,
+      "spacingUnit": 4
+    },
+    "breakpoints": {
+      "sm": 640,
+      "md": 768,
+      "lg": 1024
+    }
+  },
+  "constraints": [
+    {
+      "kind": "a11y",
+      "rule": "interactive_requires_label",
+      "level": "error"
+    },
+    {
+      "kind": "performance",
+      "rule": "first_screen_components_under_30",
+      "level": "warn"
+    }
+  ]
+}

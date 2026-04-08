@@ -1,0 +1,130 @@
+{
+  "routes": [
+    {
+      "id": "route_support",
+      "path": "/support/tickets",
+      "name": "support",
+      "view": "view_support"
+    }
+  ],
+  "views": [
+    {
+      "id": "view_support",
+      "title": "客服工单中心",
+      "layout": {
+        "type": "grid",
+        "columns": 24,
+        "gap": 16
+      },
+      "rootComponentIds": ["cmp_support_root"]
+    }
+  ],
+  "components": [
+    {
+      "id": "cmp_support_root",
+      "type": "container",
+      "props": {
+        "direction": "vertical",
+        "gap": 14
+      },
+      "children": ["cmp_ticket_table", "cmp_reply_form", "cmp_send_reply"]
+    },
+    {
+      "id": "cmp_ticket_table",
+      "type": "table",
+      "props": {
+        "columns": ["ticket_id", "priority", "status", "assignee"]
+      }
+    },
+    {
+      "id": "cmp_reply_form",
+      "type": "form",
+      "props": {
+        "title": "回复工单"
+      },
+      "children": ["cmp_reply_input"]
+    },
+    {
+      "id": "cmp_reply_input",
+      "type": "input",
+      "props": {
+        "placeholder": "输入回复内容"
+      }
+    },
+    {
+      "id": "cmp_send_reply",
+      "type": "button",
+      "props": {
+        "label": "发送回复"
+      }
+    }
+  ],
+  "data": {
+    "entities": [
+      {
+        "id": "ticket",
+        "shape": {
+          "id": "string",
+          "priority": "string",
+          "status": "string",
+          "assignee": "string"
+        }
+      }
+    ],
+    "queries": [
+      {
+        "id": "q_tickets",
+        "source": "rest",
+        "endpoint": "/api/tickets",
+        "method": "GET"
+      }
+    ],
+    "states": [
+      {
+        "id": "selectedTicketId",
+        "type": "string",
+        "initial": ""
+      }
+    ]
+  },
+  "actions": [
+    {
+      "id": "act_send_reply",
+      "trigger": {
+        "type": "click",
+        "componentId": "cmp_send_reply"
+      },
+      "effects": [
+        {
+          "type": "emit",
+          "event": "support.reply_sent"
+        }
+      ]
+    }
+  ],
+  "design": {
+    "theme": "light",
+    "tokens": {
+      "colorPrimary": "#2563eb",
+      "radiusMd": 8,
+      "spacingUnit": 4
+    },
+    "breakpoints": {
+      "sm": 640,
+      "md": 768,
+      "lg": 1024
+    }
+  },
+  "constraints": [
+    {
+      "kind": "a11y",
+      "rule": "interactive_requires_label",
+      "level": "error"
+    },
+    {
+      "kind": "performance",
+      "rule": "first_screen_components_under_30",
+      "level": "warn"
+    }
+  ]
+}

@@ -1,0 +1,114 @@
+{
+  "routes": [
+    {
+      "id": "route_landing",
+      "path": "/",
+      "name": "landing",
+      "view": "view_landing"
+    }
+  ],
+  "views": [
+    {
+      "id": "view_landing",
+      "title": "产品落地页",
+      "layout": {
+        "type": "grid",
+        "columns": 24,
+        "gap": 16
+      },
+      "rootComponentIds": ["cmp_landing_root"]
+    }
+  ],
+  "components": [
+    {
+      "id": "cmp_landing_root",
+      "type": "container",
+      "props": {
+        "direction": "vertical",
+        "gap": 20
+      },
+      "children": ["cmp_hero_title", "cmp_hero_cta"]
+    },
+    {
+      "id": "cmp_hero_title",
+      "type": "text",
+      "props": {
+        "content": "一站式 AI 原型平台"
+      }
+    },
+    {
+      "id": "cmp_hero_cta",
+      "type": "button",
+      "props": {
+        "label": "立即免费体验"
+      }
+    }
+  ],
+  "data": {
+    "entities": [
+      {
+        "id": "session",
+        "shape": {
+          "userId": "string",
+          "role": "string"
+        }
+      }
+    ],
+    "queries": [
+      {
+        "id": "q_bootstrap",
+        "source": "local"
+      }
+    ],
+    "states": [
+      {
+        "id": "loading",
+        "type": "boolean",
+        "initial": false
+      }
+    ]
+  },
+  "actions": [
+    {
+      "id": "act_cta_click",
+      "trigger": {
+        "type": "click",
+        "componentId": "cmp_hero_cta"
+      },
+      "effects": [
+        {
+          "type": "emit",
+          "event": "marketing.cta_clicked",
+          "payload": {
+            "position": "hero"
+          }
+        }
+      ]
+    }
+  ],
+  "design": {
+    "theme": "light",
+    "tokens": {
+      "colorPrimary": "#2563eb",
+      "radiusMd": 8,
+      "spacingUnit": 4
+    },
+    "breakpoints": {
+      "sm": 640,
+      "md": 768,
+      "lg": 1024
+    }
+  },
+  "constraints": [
+    {
+      "kind": "a11y",
+      "rule": "interactive_requires_label",
+      "level": "error"
+    },
+    {
+      "kind": "performance",
+      "rule": "first_screen_components_under_30",
+      "level": "warn"
+    }
+  ]
+}

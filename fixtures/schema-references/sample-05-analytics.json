@@ -1,0 +1,120 @@
+{
+  "routes": [
+    {
+      "id": "route_analytics",
+      "path": "/analytics",
+      "name": "analytics",
+      "view": "view_analytics"
+    }
+  ],
+  "views": [
+    {
+      "id": "view_analytics",
+      "title": "增长分析",
+      "layout": {
+        "type": "grid",
+        "columns": 24,
+        "gap": 16
+      },
+      "rootComponentIds": ["cmp_analytics_root"]
+    }
+  ],
+  "components": [
+    {
+      "id": "cmp_analytics_root",
+      "type": "container",
+      "props": {
+        "direction": "vertical",
+        "gap": 16
+      },
+      "children": ["cmp_filter_form", "cmp_funnel_chart"]
+    },
+    {
+      "id": "cmp_filter_form",
+      "type": "form",
+      "props": {
+        "title": "筛选条件"
+      },
+      "children": ["cmp_date_input"]
+    },
+    {
+      "id": "cmp_date_input",
+      "type": "input",
+      "props": {
+        "placeholder": "选择日期范围"
+      }
+    },
+    {
+      "id": "cmp_funnel_chart",
+      "type": "chart",
+      "props": {
+        "title": "转化漏斗",
+        "kind": "funnel"
+      }
+    }
+  ],
+  "data": {
+    "entities": [
+      {
+        "id": "session",
+        "shape": {
+          "userId": "string",
+          "role": "string"
+        }
+      }
+    ],
+    "queries": [
+      {
+        "id": "q_bootstrap",
+        "source": "local"
+      }
+    ],
+    "states": [
+      {
+        "id": "loading",
+        "type": "boolean",
+        "initial": false
+      }
+    ]
+  },
+  "actions": [
+    {
+      "id": "act_submit_filter",
+      "trigger": {
+        "type": "submit",
+        "componentId": "cmp_filter_form"
+      },
+      "effects": [
+        {
+          "type": "run_query",
+          "queryId": "q_bootstrap"
+        }
+      ]
+    }
+  ],
+  "design": {
+    "theme": "light",
+    "tokens": {
+      "colorPrimary": "#2563eb",
+      "radiusMd": 8,
+      "spacingUnit": 4
+    },
+    "breakpoints": {
+      "sm": 640,
+      "md": 768,
+      "lg": 1024
+    }
+  },
+  "constraints": [
+    {
+      "kind": "a11y",
+      "rule": "interactive_requires_label",
+      "level": "error"
+    },
+    {
+      "kind": "performance",
+      "rule": "first_screen_components_under_30",
+      "level": "warn"
+    }
+  ]
+}
