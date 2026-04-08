@@ -1,6 +1,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { UISchema } from '@prd2prototype/schema';
+import {
+  inferSchemaIntent,
+  type EngineeringTemplate,
+  type TemplateSelectionConfig
+} from './template-strategy.js';
 
 const ensureDir = (dirPath: string): void => {
   fs.mkdirSync(dirPath, { recursive: true });
@@ -13,17 +18,33 @@ const write = (relativePath: string, content: string): void => {
   fs.writeFileSync(target, content);
 };
 
+const TEMPLATE_MAIN_CLASS: Record<EngineeringTemplate, string> = {
+  dashboard:
+    'min-h-screen bg-slate-50 px-4 py-6 text-slate-900 dark:bg-slate-950 dark:text-slate-100 md:px-8 lg:px-12',
+  crm: 'min-h-screen bg-emerald-50 px-4 py-6 text-emerald-950 dark:bg-emerald-950 dark:text-emerald-100 md:px-8 lg:px-12',
+  landing:
+    'min-h-screen bg-indigo-50 px-4 py-6 text-indigo-950 dark:bg-indigo-950 dark:text-indigo-100 md:px-8 lg:px-12',
+  admin:
+    'min-h-screen bg-amber-50 px-4 py-6 text-amber-950 dark:bg-amber-950 dark:text-amber-100 md:px-8 lg:px-12'
+};
+
 const templatePage = (
-  schema: UISchema
+  schema: UISchema,
+  template: EngineeringTemplate
 ): string => `import { RenderSchema } from "@/components/render-schema";
 import schema from "@/lib/structure.json";
 import type { UISchema } from "@/lib/types";
 
 export default function Page() {
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-6 text-slate-900 dark:bg-slate-950 dark:text-slate-100 md:px-8 lg:px-12">
+    <main className="${TEMPLATE_MAIN_CLASS[template]}">
       <div className="mx-auto max-w-7xl">
-        <h1 className="mb-6 text-2xl font-semibold capitalize">${schema.page_name.replace(/_/g, ' ')}</h1>
+        <div className="mb-6 flex items-center gap-3">
+          <h1 className="text-2xl font-semibold capitalize">${schema.page_name.replace(/_/g, ' ')}</h1>
+          <span className="rounded-full bg-white/70 px-3 py-1 text-xs uppercase tracking-wide shadow-sm dark:bg-slate-900/70">
+            template: ${template}
+          </span>
+        </div>
         <RenderSchema schema={schema as UISchema} />
       </div>
     </main>
@@ -167,6 +188,8 @@ export interface UISection {
 export interface UISchema {
   schemaVersion: number;
   page_name: string;
+  intent?: "dashboard" | "crm" | "landing" | "admin";
+  template?: "dashboard" | "crm" | "landing" | "admin";
   layout: {
     type: "grid";
     columns: 24;
@@ -270,8 +293,11 @@ const postcss = `export default {
 };
 `;
 
-export const generateFrontend = (schema: UISchema): void => {
-  write('app/page.tsx', templatePage(schema));
+export const generateFrontend = (schema: UISchema, config: TemplateSelectionConfig = {}): void => {
+  const template = inferSchemaIntent(schema, config);
+  const schemaWithTemplate: UISchema = { ...schema, template };
+
+  write('app/page.tsx', templatePage(schemaWithTemplate, template));
   write('app/layout.tsx', layout);
   write('app/globals.css', globals);
   write('components/render-schema.tsx', renderer);
@@ -281,7 +307,7 @@ export const generateFrontend = (schema: UISchema): void => {
   write('components/ui/data-table.tsx', table);
   write('lib/mock-data.ts', mockData);
   write('lib/types.ts', types);
-  write('lib/structure.json', `${JSON.stringify(schema, null, 2)}\n`);
+  write('lib/structure.json', `${JSON.stringify(schemaWithTemplate, null, 2)}\n`);
   write('next.config.mjs', nextConfig);
   write('tailwind.config.ts', tailwindConfig);
   write('postcss.config.mjs', postcss);

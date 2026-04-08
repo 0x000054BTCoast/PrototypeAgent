@@ -1,6 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { UISchema, UIComponent, Position, CURRENT_UI_SCHEMA_VERSION } from '@prd2prototype/schema';
+import {
+  UISchema,
+  UIComponent,
+  Position,
+  CURRENT_UI_SCHEMA_VERSION,
+  type UISchemaIntent
+} from '@prd2prototype/schema';
 
 const toSnakeCase = (value: string): string =>
   value
@@ -103,6 +109,86 @@ type InferComponentContext = {
 
 type ComponentType = UIComponent['type'];
 type ParsedInteraction = Record<string, unknown>;
+
+export interface IntentInferenceRule {
+  intent: UISchemaIntent;
+  keywords: readonly string[];
+  weight?: number;
+}
+
+export interface IntentInferenceConfig {
+  rules?: IntentInferenceRule[];
+  fallbackIntent?: UISchemaIntent;
+}
+
+export interface ParsePrdToSchemaOptions {
+  intent?: IntentInferenceConfig;
+}
+
+export const DEFAULT_INTENT_INFERENCE_RULES: IntentInferenceRule[] = [
+  {
+    intent: 'dashboard',
+    keywords: [
+      'dashboard',
+      'analytics',
+      'kpi',
+      'metrics',
+      'report',
+      '看板',
+      '分析',
+      '指标',
+      '报表'
+    ],
+    weight: 3
+  },
+  {
+    intent: 'crm',
+    keywords: [
+      'crm',
+      'customer',
+      'lead',
+      'client',
+      'sales',
+      'pipeline',
+      '客户',
+      '线索',
+      '商机',
+      '销售'
+    ],
+    weight: 3
+  },
+  {
+    intent: 'landing',
+    keywords: [
+      'landing',
+      'hero',
+      'pricing',
+      'marketing',
+      'campaign',
+      'cta',
+      '落地页',
+      '营销',
+      '活动页'
+    ],
+    weight: 3
+  },
+  {
+    intent: 'admin',
+    keywords: [
+      'admin',
+      'management',
+      'permission',
+      'role',
+      'settings',
+      'console',
+      '后台',
+      '管理',
+      '权限',
+      '配置'
+    ],
+    weight: 3
+  }
+];
 
 const COMPONENT_KEYWORDS: Record<ComponentType, readonly string[]> = {
   chart: [
@@ -631,11 +717,63 @@ const inferInteractions = (
   return interactions;
 };
 
-export const parsePrdToSchema = (markdown: string): UISchema => {
-  return astToSchema(parsePrdToAst(markdown)).schema;
+export const inferSchemaIntent = (
+  schema: Pick<UISchema, 'page_name' | 'sections' | 'interactions'>,
+  config: IntentInferenceConfig = {}
+): UISchemaIntent => {
+  const rules = config.rules ?? DEFAULT_INTENT_INFERENCE_RULES;
+  const corpus = [
+    schema.page_name,
+    ...schema.sections.map((section) => section.name),
+    ...schema.sections.flatMap((section) =>
+      section.components.flatMap((component) => [
+        component.type,
+        String(component.props.title ?? ''),
+        String(component.props.content ?? '')
+      ])
+    ),
+    ...schema.interactions.flatMap((interaction) =>
+      [interaction.event, interaction.targetAction, interaction.sourceText]
+        .map((value) => String(value ?? ''))
+        .filter(Boolean)
+    )
+  ]
+    .join(' ')
+    .toLowerCase();
+
+  const scores = new Map<UISchemaIntent, number>();
+  for (const rule of rules) {
+    let score = scores.get(rule.intent) ?? 0;
+    const weight = rule.weight ?? 1;
+    for (const keyword of rule.keywords) {
+      if (corpus.includes(keyword.toLowerCase())) {
+        score += weight;
+      }
+    }
+    scores.set(rule.intent, score);
+  }
+
+  const ranked = [...scores.entries()].sort((a, b) => b[1] - a[1]);
+  const winner = ranked[0];
+
+  if (!winner || winner[1] <= 0) {
+    return config.fallbackIntent ?? 'dashboard';
+  }
+
+  return winner[0];
 };
 
-export const astToSchema = (parsed: ParsedPrdAst): AstToSchemaResult => {
+export const parsePrdToSchema = (
+  markdown: string,
+  options: ParsePrdToSchemaOptions = {}
+): UISchema => {
+  return astToSchema(parsePrdToAst(markdown), options).schema;
+};
+
+export const astToSchema = (
+  parsed: ParsedPrdAst,
+  options: ParsePrdToSchemaOptions = {}
+): AstToSchemaResult => {
   let componentIndex = 0;
   const trace: SchemaTraceEntry[] = [];
   const pushTrace = (sourceLine: number, schemaPath: string, detail?: string): void => {
@@ -742,12 +880,21 @@ export const astToSchema = (parsed: ParsedPrdAst): AstToSchemaResult => {
   const pageName = toSnakeCase(firstHeadingNode?.text ?? 'generated_page') || 'generated_page';
   pushTrace(pageLine, '$.schemaVersion', String(CURRENT_UI_SCHEMA_VERSION));
   pushTrace(pageLine, '$.page_name', pageName);
+  pushTrace(pageLine, '$.intent', 'inferred');
   pushTrace(pageLine, '$.layout.type', 'grid');
   pushTrace(pageLine, '$.layout.columns', '24');
 
   const schema: UISchema = {
     schemaVersion: CURRENT_UI_SCHEMA_VERSION,
     page_name: pageName,
+    intent: inferSchemaIntent(
+      {
+        page_name: pageName,
+        sections,
+        interactions
+      },
+      options.intent
+    ),
     layout: { type: 'grid', columns: 24 },
     sections,
     interactions

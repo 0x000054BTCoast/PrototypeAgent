@@ -56,6 +56,34 @@ Orders overview
     assert.equal(tableSection?.components[0]?.type, 'table');
   });
 
+  it('infers schema intent and supports configurable override rules', () => {
+    const crmSchema = parsePrdToSchema(`# CRM Workspace
+
+## 客户线索
+- 跟进客户
+`);
+    assert.equal(crmSchema.intent, 'crm');
+
+    const overridden = parsePrdToSchema(
+      `# Internal Console
+
+## Settings
+Role permissions management
+`,
+      {
+        intent: {
+          rules: [
+            { intent: 'landing', keywords: ['console', 'settings'], weight: 5 },
+            { intent: 'admin', keywords: ['admin'], weight: 1 }
+          ],
+          fallbackIntent: 'dashboard'
+        }
+      }
+    );
+
+    assert.equal(overridden.intent, 'landing');
+  });
+
   it('extracts interactions with event/condition/target action', () => {
     const schema = parsePrdToSchema(`# 用户列表
 

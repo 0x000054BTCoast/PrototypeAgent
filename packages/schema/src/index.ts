@@ -17,9 +17,13 @@ export interface UISection {
   components: UIComponent[];
 }
 
+export type UISchemaIntent = 'dashboard' | 'crm' | 'landing' | 'admin';
+
 export interface UISchema {
   schemaVersion: number;
   page_name: string;
+  intent?: UISchemaIntent;
+  template?: UISchemaIntent;
   layout: {
     type: 'grid';
     columns: 24;
