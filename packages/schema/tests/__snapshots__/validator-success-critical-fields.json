@@ -1,0 +1,113 @@
+{
+  "success": true,
+  "data": {
+    "routes": [
+      {
+        "id": "route_dashboard",
+        "path": "/dashboard",
+        "name": "dashboard",
+        "view": "view_dashboard",
+        "guards": [
+          {
+            "kind": "auth",
+            "rule": "must_login"
+          }
+        ]
+      }
+    ],
+    "views": [
+      {
+        "id": "view_dashboard",
+        "title": "Dashboard",
+        "layout": {
+          "type": "grid",
+          "columns": 24,
+          "gap": 16
+        },
+        "rootComponentIds": ["cmp_root"]
+      }
+    ],
+    "components": [
+      {
+        "id": "cmp_root",
+        "type": "container",
+        "props": {
+          "direction": "vertical"
+        },
+        "children": ["cmp_text"],
+        "bindings": [
+          {
+            "prop": "title",
+            "from": "data.states.pageTitle"
+          }
+        ]
+      },
+      {
+        "id": "cmp_text",
+        "type": "text",
+        "props": {
+          "content": "Hello"
+        }
+      }
+    ],
+    "data": {
+      "entities": [
+        {
+          "id": "user",
+          "shape": {
+            "id": "string",
+            "name": "string"
+          }
+        }
+      ],
+      "queries": [
+        {
+          "id": "q_users",
+          "source": "rest",
+          "endpoint": "/api/users",
+          "method": "GET"
+        }
+      ],
+      "states": [
+        {
+          "id": "pageTitle",
+          "type": "string",
+          "initial": "Dashboard"
+        }
+      ]
+    },
+    "actions": [
+      {
+        "id": "act_load_users",
+        "trigger": {
+          "type": "load"
+        },
+        "effects": [
+          {
+            "type": "run_query",
+            "queryId": "q_users"
+          }
+        ]
+      }
+    ],
+    "design": {
+      "theme": "light",
+      "tokens": {
+        "spacingUnit": 4,
+        "radiusMd": 8
+      },
+      "breakpoints": {
+        "sm": 640,
+        "md": 768,
+        "lg": 1024
+      }
+    },
+    "constraints": [
+      {
+        "kind": "a11y",
+        "rule": "interactive_requires_label",
+        "level": "error"
+      }
+    ]
+  }
+}
