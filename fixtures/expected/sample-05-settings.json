@@ -1,0 +1,8 @@
+{
+  "name": "设置页",
+  "components": [
+    { "id": "theme", "type": "switch", "props": { "label": "深色模式" } },
+    { "id": "notify", "type": "switch", "props": { "label": "通知" } },
+    { "id": "save", "type": "button", "props": { "text": "保存" } }
+  ]
+}

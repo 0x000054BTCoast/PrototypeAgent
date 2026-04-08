@@ -1,0 +1,9 @@
+{
+  "name": "用户资料页",
+  "components": [
+    { "id": "avatar", "type": "image", "props": { "shape": "circle" } },
+    { "id": "username", "type": "text", "props": { "content": "用户名" } },
+    { "id": "bio", "type": "text", "props": { "content": "个人简介" } },
+    { "id": "edit", "type": "button", "props": { "text": "编辑资料" } }
+  ]
+}

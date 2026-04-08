@@ -1,0 +1,7 @@
+{
+  "name": "数据表格页",
+  "components": [
+    { "id": "orders", "type": "table", "props": { "columns": ["订单号", "状态", "金额"] } },
+    { "id": "pagination", "type": "pagination", "props": { "pageSize": 10 } }
+  ]
+}

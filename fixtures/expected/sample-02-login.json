@@ -1,0 +1,9 @@
+{
+  "name": "登录页",
+  "components": [
+    { "id": "email", "type": "input", "props": { "label": "邮箱" } },
+    { "id": "password", "type": "input", "props": { "label": "密码" } },
+    { "id": "submit", "type": "button", "props": { "text": "登录" } },
+    { "id": "forgot", "type": "text", "props": { "content": "忘记密码" } }
+  ]
+}
