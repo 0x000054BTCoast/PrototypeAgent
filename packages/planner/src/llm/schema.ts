@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { UISchema } from '../../../schema/src/index.js';
+import type { UISchema } from '../../../schema/src/index';
 
 const componentSchema: z.ZodType<UISchema['sections'][number]['components'][number]> = z.lazy(() =>
   z.object({
