@@ -1,5 +1,5 @@
-import { redirect } from 'next/navigation';
+import { WorkbenchClient } from './workbench/workbench-client';
 
-export default function HomePage() {
-  redirect('/workspace/analytics');
+export default function Page() {
+  return <WorkbenchClient />;
 }

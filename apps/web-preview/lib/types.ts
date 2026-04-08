@@ -7,13 +7,13 @@ export interface UIComponent {
     | 'table'
     | 'button'
     | 'card'
+    | 'text'
     | 'badge'
     | 'alert'
     | 'input'
     | 'textarea'
     | 'select'
-    | 'tabs'
-    | 'text';
+    | 'tabs';
   props: Record<string, unknown>;
   style: Record<string, unknown>;
   children: UIComponent[];
@@ -29,6 +29,8 @@ export interface UISection {
 export interface UISchema {
   schemaVersion: number;
   page_name: string;
+  intent?: 'dashboard' | 'crm' | 'landing' | 'admin';
+  template?: 'dashboard' | 'crm' | 'landing' | 'admin';
   layout: {
     type: 'grid';
     columns: 24;

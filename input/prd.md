@@ -1,13 +1,9 @@
-# Analytics Workspace
+生成一张原型图用于描述一个后台功能。
+这个后台功能将针对加密货币交易对做增删改查。
+页面要求如下：
 
-## Header
-- Card: KPI summary
-- Button: Create report
-
-## Main Dashboard
-- Chart: Revenue by month
-- Table: Top customers
-- Card: Alerts
-
-## Footer
-- Text: Last synced timestamp
+1. 右侧后台菜单：现货交易对管理
+2. 页面顶部支持输入交易对后，点击搜索按交易对名筛选列表，点击重置则清空输入内容并恢复页面。
+3. 交易对列表需使用表格展示“交易对名”、“交易对状态”；举例：“BTC/USDT”、“开启中”；请你随机给我生成20个交易对。
+4. 需支持我在页面编辑交易对、下线交易对。
+5. 点击编辑按钮后将出现modal弹窗，modal弹窗内可配置交易对的状态、价格精度、数量精度、开盘价、开盘时间、交易限额。

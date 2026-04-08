@@ -1,17 +1,34 @@
 # PRD2Prototype
 
-将产品需求文档（PRD）快速转换为可预览前端原型的 Monorepo 工程。
+把 PRD 转成可继续评审、迭代和演示的产品原型。
 
-- 输入：`input/prd.md`
-- 输出：`runs/<runId>/...` 分层产物 + `apps/web-preview` 预览应用
+当前仓库包含两层能力：
 
-## 1. 仓库结构
+- `planner pipeline`：把 `input/prd.md` 转成结构化产物和静态预览。
+- `web-preview`：把最新 `structure.json` 渲染成一个更接近 `v0.app` 风格的原型工作台，支持输入需求、触发 run、查看日志、切换历史版本、直接预览完整画布。
+
+## 1. 现在能做什么
+
+从一个 PRD 出发，仓库会输出：
+
+- 结构化结果：`llm-structured.json`、`structure.json`、`app-schema-v2.json`
+- 静态预览：`preview.html`、`prototype.svg`
+- 运行日志：`pipeline-log.json`
+- 可交互工作台：`apps/web-preview`
+
+`apps/web-preview` 的首页现在就是生成器入口，不再只是单页 demo：
+
+- 左侧：PRD 输入、Provider 选择、运行触发、日志与历史 run
+- 右侧：由最新 `structure.json` 自动生成的完整产品级原型画布
+- 画布视图：桌面工作台、详情流、移动端快照
+
+## 2. 仓库结构
 
 ```text
 project-root/
-  input/                      # PRD 输入目录
+  input/
     prd.md
-  runs/                       # 每次运行一个目录（自动生成）
+  runs/
     2026-04-08T12-30-45Z_<traceId>/
       input/prd.md
       artifacts/
@@ -22,29 +39,30 @@ project-root/
       output/
         preview.html
         prototype.svg
-      logs/pipeline-log.json
-  output/                     # 最新运行快捷引用
-    latest -> ../runs/<runId>/ (软链接，若系统支持)
+      logs/
+        pipeline-log.json
+  output/
+    latest -> ../runs/<runId>/    # 软链接，若系统支持
     latest-run.json
   packages/
-    schema/                   # 数据结构约束与校验
-    parser/                   # PRD 解析
-    planner/                  # 流程编排（pipeline）
-    codegen/                  # 代码生成
-    evaluator/                # patch 与评估能力
+    schema/
+    parser/
+    planner/
+    codegen/
+    evaluator/
   apps/
-    web-preview/              # Next.js 预览应用
+    web-preview/                  # Next.js 原型工作台
   docs/
     architecture.md
     pipeline.md
-    deployment-guide.zh-CN.md # 部署指南
-    user-manual.zh-CN.md      # 使用说明书（小白版）
+    deployment-guide.zh-CN.md
+    user-manual.zh-CN.md
 ```
 
-## 2. 环境要求
+## 3. 环境要求
 
 - Node.js 20+
-- pnpm 10+（项目 `packageManager` 为 `pnpm@10.7.1`）
+- pnpm 10+（项目声明为 `pnpm@10.7.1`）
 
 建议先检查：
 
@@ -53,58 +71,77 @@ node -v
 pnpm -v
 ```
 
-## 3. 快速开始（本地）
+如果本机还没有 `pnpm`，推荐：
 
-### 3.1 安装依赖
+```bash
+corepack enable
+corepack prepare pnpm@10.7.1 --activate
+```
+
+## 4. 快速开始
+
+### 4.1 安装依赖
 
 ```bash
 pnpm install
 ```
 
-### 3.2 放入你的 PRD
+### 4.2 准备 PRD
 
-将需求文档写入或替换：
+把你的需求写到：
 
 ```text
 input/prd.md
 ```
 
-### 3.3 运行生成流水线
+### 4.3 跑一次 pipeline
 
 ```bash
 pnpm pipeline
 ```
 
-运行后重点查看：
+这一步会生成新的 `runs/<runId>/...` 目录，并刷新 `output/latest-run.json`。
+
+重点查看：
 
 - `runs/<runId>/artifacts/structure.json`
 - `runs/<runId>/output/preview.html`
 - `runs/<runId>/output/prototype.svg`
 - `runs/<runId>/logs/pipeline-log.json`
-- `output/latest-run.json`（默认 latest 指针）
 
-### 3.4 启动前端预览
+### 4.4 启动原型工作台
+
+在仓库根目录执行：
 
 ```bash
 pnpm --filter web-preview dev
 ```
 
-浏览器访问终端提示地址（通常是 `http://localhost:3000`）。
+默认访问：
 
-### 3.5 运行目录与清理
-
-```bash
-# 指定本次运行目录（两个参数等价）
-pnpm pipeline --run-dir runs/my-debug-run
-pnpm pipeline --workspace-dir runs/my-debug-run
-
-# 清理旧运行（例：保留最近 20 个，且删除 7 天前数据）
-pnpm runs:prune -- --keep 20 --days 7
+```text
+http://localhost:3000
 ```
 
-## 4. 常用命令速查
+打开后你会看到：
+
+- 首页即生成工作台
+- 可直接修改 PRD 文本并触发 `/api/run`
+- 可切换历史 run 查看不同 `structure.json`
+- 可在一个更高保真的画布里查看生成结果
+
+## 5. 常用命令
 
 ```bash
+# 运行 pipeline
+pnpm pipeline
+
+# 启动 web-preview
+pnpm --filter web-preview dev
+
+# 构建 web-preview
+pnpm --filter web-preview build
+
 # 端到端 baseline（含耗时统计）
 pnpm baseline
 
@@ -120,29 +157,54 @@ pnpm dag
 # 质量门禁（本地）
 pnpm quality:gate
 
-# 质量门禁（CI 严格阈值）
+# 质量门禁（CI）
 pnpm quality:gate:ci
 
 # 全量检查
 pnpm check
 ```
 
-## 5. 部署与运维入口
-
-- 部署指南（Linux / PM2 / Nginx）：[`docs/deployment-guide.zh-CN.md`](docs/deployment-guide.zh-CN.md)
-- 使用说明书（零基础）：[`docs/user-manual.zh-CN.md`](docs/user-manual.zh-CN.md)
-
-推荐上线前最小检查：
+## 6. 运行目录与清理
 
 ```bash
-pnpm install
+# 指定本次运行目录（两个参数等价）
+pnpm pipeline --run-dir runs/my-debug-run
+pnpm pipeline --workspace-dir runs/my-debug-run
+
+# 清理旧运行（例：保留最近 20 个，且删除 7 天前数据）
+pnpm runs:prune -- --keep 20 --days 7
+```
+
+如果你计划长期部署，建议把 `runs/` 和 `output/` 视为持久化目录处理。
+
+## 7. 发布前建议验证
+
+至少跑以下命令：
+
+```bash
 pnpm --filter web-preview build
 pnpm quality:gate
 ```
 
-## 6. 常见问题（快速定位）
+如果你这次主要改的是前端工作台，最小验证可以先跑：
 
-- **改了 PRD 但页面没变化**：重新执行 `pnpm pipeline`，并确认 `output/latest-run.json` 时间戳已更新。
-- **服务可访问但产物旧**：检查是否使用了最新 run 的 `runs/<runId>/output/*`。
-- **端口冲突（3000）**：`pnpm --filter web-preview dev -- --port 3001` 或 `start -- -p 3100`。
-- **部署后重启失败**：优先查看进程日志（PM2 或 systemd）和 Node 版本是否仍为 20+。
+```bash
+pnpm --filter web-preview build
+```
+
+## 8. 质量门禁指标说明
+
+`pnpm quality:gate` 会输出：
+
+- `success_rate`
+- `duration_ms`
+- `error_distribution`
+- `editable_stability_rate`
+- `baseline_score`
+
+建议合并前至少达到 `pnpm quality:gate:ci` 的门槛。
+
+## 9. 文档入口
+
+- 部署指南：[`docs/deployment-guide.zh-CN.md`](docs/deployment-guide.zh-CN.md)
+- 使用说明：[`docs/user-manual.zh-CN.md`](docs/user-manual.zh-CN.md)

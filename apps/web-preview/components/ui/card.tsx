@@ -1,64 +1,41 @@
 import * as React from 'react';
-import { asSize, asState, cx, type Size, type State } from '@/components/ui/style-system';
-
-type CardVariant = 'elevated' | 'outline' | 'filled';
-
-const variantClasses: Record<CardVariant, string> = {
-  elevated: 'bg-surface border border-border shadow-sm',
-  outline: 'bg-transparent border border-border',
-  filled: 'bg-surface-muted border border-transparent'
-};
-
-const sizeClasses: Record<Size, string> = {
-  sm: 'p-sm rounded-md',
-  md: 'p-md rounded-lg',
-  lg: 'p-lg rounded-xl'
-};
-
-const stateClasses: Record<State, string> = {
-  default: '',
-  active: 'ring-2 ring-blue-400',
-  disabled: 'opacity-60',
-  loading: 'animate-pulse',
-  error: 'ring-2 ring-red-500',
-  success: 'ring-2 ring-emerald-500'
-};
-
-export interface CardSlots {
-  header?: React.ReactNode;
-  body?: React.ReactNode;
-  footer?: React.ReactNode;
-}
-
-export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: CardVariant;
-  size?: Size;
-  state?: State;
-  slots?: CardSlots;
-}
 
 export function Card({
-  className,
+  className = '',
   variant = 'elevated',
   size = 'md',
   state = 'default',
   slots,
   children,
   ...props
-}: CardProps) {
+}: React.HTMLAttributes<HTMLDivElement> & {
+  variant?: 'elevated' | 'outline' | 'filled';
+  size?: 'sm' | 'md' | 'lg';
+  state?: 'default' | 'active' | 'disabled' | 'loading' | 'error' | 'success';
+  slots?: { header?: React.ReactNode; footer?: React.ReactNode };
+}) {
+  const variantClasses = {
+    elevated: 'border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900',
+    outline: 'border border-slate-200 bg-transparent dark:border-slate-800',
+    filled: 'border border-transparent bg-slate-100 dark:bg-slate-800'
+  };
+  const sizeClasses = { sm: 'p-3 rounded-lg', md: 'p-4 rounded-xl', lg: 'p-6 rounded-2xl' };
+  const stateClasses = {
+    default: '',
+    active: 'ring-2 ring-blue-500',
+    disabled: 'opacity-50',
+    loading: 'animate-pulse',
+    error: 'ring-2 ring-red-500',
+    success: 'ring-2 ring-emerald-500'
+  };
+
   return (
     <div
-      className={cx(
-        'space-y-sm transition',
-        variantClasses[variant],
-        sizeClasses[asSize(size)],
-        stateClasses[asState(state)],
-        className
-      )}
+      className={`space-y-2 ${variantClasses[variant]} ${sizeClasses[size]} ${stateClasses[state]} ${className}`}
       {...props}
     >
       {slots?.header}
-      <div>{slots?.body ?? children}</div>
+      <div>{children}</div>
       {slots?.footer}
     </div>
   );
