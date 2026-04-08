@@ -1,0 +1,12 @@
+{
+  "name": "@prd2prototype/parser",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@prd2prototype/schema": "1.0.0"
+  },
+  "scripts": {
+    "parse": "tsx src/index.ts"
+  }
+}

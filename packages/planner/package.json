@@ -1,0 +1,13 @@
+{
+  "name": "@prd2prototype/planner",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@prd2prototype/codegen": "1.0.0",
+    "@prd2prototype/parser": "1.0.0"
+  },
+  "scripts": {
+    "pipeline": "tsx src/pipeline.ts"
+  }
+}

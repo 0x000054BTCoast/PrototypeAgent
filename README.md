@@ -10,8 +10,7 @@ npm run pipeline
 ## Run Frontend
 
 ```bash
-cd frontend
-npm install
+cd apps/web-preview
 npm run dev
 ```
 
@@ -33,9 +32,12 @@ project-root/
     prototype.svg
     preview.html
     pipeline-log.json
-  frontend/
-    app/
-    components/
-    lib/
-  scripts/
+  packages/
+    schema/
+    parser/
+    planner/
+    codegen/
+    evaluator/
+  apps/
+    web-preview/
 ```
