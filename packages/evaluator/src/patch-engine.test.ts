@@ -58,4 +58,18 @@ describe('applyPatchInstruction', () => {
     assert.equal(decision?.details?.requested_columns, 12);
     assert.equal(decision?.details?.applied_columns, 24);
   });
+
+  it('creates a default section before adding a button when sections is empty', () => {
+    const schema = createBaseSchema();
+    schema.sections = [];
+
+    assert.doesNotThrow(() => applyPatchInstruction(schema, 'please add button'));
+    const updated = applyPatchInstruction(schema, 'please add button');
+
+    assert.equal(updated.sections.length, 1);
+    assert.equal(updated.sections[0]?.id, 'section_1');
+    assert.equal(updated.sections[0]?.position, 'center');
+    assert.equal(updated.sections[0]?.components.length, 1);
+    assert.equal(updated.sections[0]?.components[0]?.type, 'button');
+  });
 });
