@@ -6,7 +6,6 @@ import {
   normalizeAndValidateUISchemaVersion,
   type UISchema
 } from '../../schema/src/index.js';
-import { parsePrdToSchema } from '../../parser/src/index.js';
 import { generateFrontend } from '../../codegen/src/json-to-ui.js';
 import { exportHtml, exportSvg } from '../../codegen/src/exporters.js';
 import { createStructuredLogger } from './logger.js';
@@ -16,6 +15,7 @@ import {
   type PipelineErrorCode,
   asPipelineError
 } from './error-codes.js';
+import { runStructuredPlanner } from './llm/structured-planner.js';
 
 const logger = createStructuredLogger();
 
@@ -74,32 +74,55 @@ try {
     input: path.relative(repoRoot, inputPath)
   });
 
+  const llmContext = logger.startPhase('llm_structured_planner', {
+    input: path.relative(repoRoot, inputPath)
+  });
+
+  let markdown = '';
+  try {
+    markdown = fs.readFileSync(inputPath, 'utf8');
+  } catch (error) {
+    throw asPipelineError(
+      PIPELINE_ERROR_CODES.parser.readInputFailed,
+      `[${PIPELINE_ERROR_CODES.parser.readInputFailed}] Unable to read PRD input: ${path.relative(repoRoot, inputPath)}`,
+      error
+    );
+  }
+
+  try {
+    const { schema, artifact } = await runStructuredPlanner(markdown);
+
+    fs.writeFileSync(
+      path.resolve(outputDir, 'llm-structured.json'),
+      `${JSON.stringify(artifact, null, 2)}\n`
+    );
+    fs.writeFileSync(
+      path.resolve(outputDir, 'structure.json'),
+      `${JSON.stringify(schema, null, 2)}\n`
+    );
+
+    logger.endPhase(llmContext, {
+      provider: artifact.provider,
+      model: artifact.model,
+      token_usage: artifact.token_usage,
+      retries: artifact.retries,
+      failed_reason: artifact.failures.length > 0 ? artifact.failures : null
+    });
+  } catch (error) {
+    const code =
+      error instanceof PipelineError ? error.code : PIPELINE_ERROR_CODES.llm.providerFailed;
+    logger.failPhase(llmContext, code, error, {
+      failed_reason: error instanceof Error ? error.message : String(error)
+    });
+    throw error;
+  }
+
   runWithRetry('prd_parser', PIPELINE_ERROR_CODES.parser.parseFailed, () => {
-    let markdown = '';
-    try {
-      markdown = fs.readFileSync(inputPath, 'utf8');
-    } catch (error) {
-      throw asPipelineError(
-        PIPELINE_ERROR_CODES.parser.readInputFailed,
-        `[${PIPELINE_ERROR_CODES.parser.readInputFailed}] Unable to read PRD input: ${path.relative(repoRoot, inputPath)}`,
-        error
-      );
-    }
-
-    const schema = parsePrdToSchema(markdown);
-
-    try {
-      fs.writeFileSync(
-        path.resolve(outputDir, 'structure.json'),
-        `${JSON.stringify(schema, null, 2)}\n`
-      );
-    } catch (error) {
-      throw asPipelineError(
-        PIPELINE_ERROR_CODES.schema.serializeFailed,
-        `[${PIPELINE_ERROR_CODES.schema.serializeFailed}] Unable to write output/structure.json`,
-        error
-      );
-    }
+    assertOutputExists(
+      path.resolve(outputDir, 'llm-structured.json'),
+      PIPELINE_ERROR_CODES.qa.outputMissing,
+      repoRoot
+    );
   });
 
   const schema = runWithRetry(
@@ -160,6 +183,11 @@ try {
 
   runWithRetry('qa_output_check', PIPELINE_ERROR_CODES.qa.outputMissing, () => {
     assertOutputExists(
+      path.resolve(outputDir, 'llm-structured.json'),
+      PIPELINE_ERROR_CODES.qa.outputMissing,
+      repoRoot
+    );
+    assertOutputExists(
       path.resolve(outputDir, 'structure.json'),
       PIPELINE_ERROR_CODES.qa.outputMissing,
       repoRoot
@@ -193,6 +221,7 @@ try {
 
   logger.info('pipeline', 'pipeline_completed', {
     output: [
+      'output/llm-structured.json',
       'output/structure.json',
       'output/app-schema-v2.json',
       'output/compatibility-report.json',
@@ -221,6 +250,7 @@ const log = {
   total_duration_ms: totalDurationMs,
   events: logger.events,
   output: [
+    'output/llm-structured.json',
     'output/structure.json',
     'output/app-schema-v2.json',
     'output/compatibility-report.json',
