@@ -1,6 +1,6 @@
 # PRD2Prototype
 
-将产品需求文档（PRD）快速转成可预览前端原型的 Monorepo 工程。
+将产品需求文档（PRD）快速转换为可预览前端原型的 Monorepo 工程。
 
 - 输入：`input/prd.md`
 - 输出：`runs/<runId>/...` 分层产物 + `apps/web-preview` 预览应用
@@ -18,6 +18,7 @@ project-root/
         llm-structured.json
         structure.json
         app-schema-v2.json
+        compatibility-report.json
       output/
         preview.html
         prototype.svg
@@ -36,9 +37,8 @@ project-root/
   docs/
     architecture.md
     pipeline.md
-    contributing.md
-    deployment-guide.zh-CN.md # 部署指南（新增）
-    user-manual.zh-CN.md      # 小白说明书（新增）
+    deployment-guide.zh-CN.md # 部署指南
+    user-manual.zh-CN.md      # 使用说明书（小白版）
 ```
 
 ## 2. 环境要求
@@ -46,7 +46,7 @@ project-root/
 - Node.js 20+
 - pnpm 10+（项目 `packageManager` 为 `pnpm@10.7.1`）
 
-> 建议先检查：
+建议先检查：
 
 ```bash
 node -v
@@ -86,8 +86,7 @@ pnpm pipeline
 ### 3.4 启动前端预览
 
 ```bash
-cd apps/web-preview
-pnpm dev
+pnpm --filter web-preview dev
 ```
 
 浏览器访问终端提示地址（通常是 `http://localhost:3000`）。
@@ -115,6 +114,9 @@ pnpm patch -- "add button to header interaction"
 # 解析器评估
 pnpm eval:parser
 
+# 从 schema 生成任务 DAG
+pnpm dag
+
 # 质量门禁（本地）
 pnpm quality:gate
 
@@ -125,19 +127,22 @@ pnpm quality:gate:ci
 pnpm check
 ```
 
-## 5. 质量门禁指标说明
+## 5. 部署与运维入口
 
-`pnpm quality:gate` 会输出以下指标：
+- 部署指南（Linux / PM2 / Nginx）：[`docs/deployment-guide.zh-CN.md`](docs/deployment-guide.zh-CN.md)
+- 使用说明书（零基础）：[`docs/user-manual.zh-CN.md`](docs/user-manual.zh-CN.md)
 
-- `success_rate`：成功率
-- `duration_ms`：执行耗时
-- `error_distribution`：错误分布
-- `editable_stability_rate`：可编辑稳定率
-- `baseline_score`：综合基准分
+推荐上线前最小检查：
 
-合并到主分支前，建议至少满足 CI 标准（`pnpm quality:gate:ci`）。
+```bash
+pnpm install
+pnpm --filter web-preview build
+pnpm quality:gate
+```
 
-## 6. 新手文档入口
+## 6. 常见问题（快速定位）
 
-- 部署指南：[`docs/deployment-guide.zh-CN.md`](docs/deployment-guide.zh-CN.md)
-- 使用说明书（小白版）：[`docs/user-manual.zh-CN.md`](docs/user-manual.zh-CN.md)
+- **改了 PRD 但页面没变化**：重新执行 `pnpm pipeline`，并确认 `output/latest-run.json` 时间戳已更新。
+- **服务可访问但产物旧**：检查是否使用了最新 run 的 `runs/<runId>/output/*`。
+- **端口冲突（3000）**：`pnpm --filter web-preview dev -- --port 3001` 或 `start -- -p 3100`。
+- **部署后重启失败**：优先查看进程日志（PM2 或 systemd）和 Node 版本是否仍为 20+。
