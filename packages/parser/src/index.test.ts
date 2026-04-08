@@ -127,4 +127,27 @@ Role permissions management
       )
     );
   });
+
+  it('uses interaction sourceLine for trace when source text is duplicated', () => {
+    const ast = parsePrdToAst(`# 交互页
+
+## 操作区
+- 点击提交按钮后跳转详情页
+
+## 结果区
+- 点击提交按钮后跳转详情页
+`);
+    const { trace } = astToSchema(ast);
+
+    const firstInteractionEvent = trace.find(
+      (entry) => entry.schemaPath === '$.interactions[0].event'
+    );
+    const secondInteractionEvent = trace.find(
+      (entry) => entry.schemaPath === '$.interactions[1].event'
+    );
+
+    assert.equal(firstInteractionEvent?.sourceLine, 4);
+    assert.equal(secondInteractionEvent?.sourceLine, 7);
+    assert.notEqual(firstInteractionEvent?.sourceLine, secondInteractionEvent?.sourceLine);
+  });
 });

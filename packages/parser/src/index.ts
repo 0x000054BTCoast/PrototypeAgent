@@ -108,7 +108,16 @@ type InferComponentContext = {
 };
 
 type ComponentType = UIComponent['type'];
-type ParsedInteraction = Record<string, unknown>;
+type ParsedInteraction = {
+  id: string;
+  sectionId: string;
+  event: string;
+  triggerCondition: string;
+  targetAction: string;
+  componentId?: string;
+  sourceText: string;
+  sourceLine: number;
+};
 
 export interface IntentInferenceRule {
   intent: UISchemaIntent;
@@ -611,12 +620,6 @@ export const parsePrdToAst = (markdown: string): ParsedPrdAst => {
   };
 };
 
-const collectNodeTexts = (node: AstNode): string[] => {
-  if (node.type === 'list') return node.items.map((item) => item.text);
-  if (node.type === 'heading') return [node.text];
-  return [node.text];
-};
-
 const collectNodeTextEntries = (node: AstNode): Array<{ text: string; line: number }> => {
   if (node.type === 'list') return node.items.map((item) => ({ text: item.text, line: item.line }));
   if (node.type === 'heading') return [{ text: node.text, line: node.line }];
@@ -662,6 +665,7 @@ const inferInteractionComponent = (
 
 const parseInteractionFromText = (
   text: string,
+  sourceLine: number,
   sectionId: string,
   components: UIComponent[],
   interactionIndex: number
@@ -686,7 +690,8 @@ const parseInteractionFromText = (
     triggerCondition: condition ?? 'always',
     targetAction: normalizedAction,
     componentId: component?.id,
-    sourceText: text.trim()
+    sourceText: text.trim(),
+    sourceLine
   };
 };
 
@@ -702,9 +707,10 @@ const inferInteractions = (
     const components = schemaSection?.components ?? [];
 
     section.nodes.forEach((node) => {
-      collectNodeTexts(node).forEach((text) => {
+      collectNodeTextEntries(node).forEach(({ text, line }) => {
         const interaction = parseInteractionFromText(
           text,
+          line,
           sectionId,
           components,
           interactions.length + 1
@@ -851,21 +857,7 @@ export const astToSchema = (
   const interactions = inferInteractions(parsed, sections);
   interactions.forEach((interaction, interactionIndex) => {
     const interactionPath = `$.interactions[${interactionIndex}]`;
-    const sourceText = String(interaction.sourceText ?? '');
-    const sourceLine =
-      parsed.document.nodes.find((node) =>
-        collectNodeTexts(node).some((text) => text.trim() === sourceText.trim())
-      )?.type === 'heading'
-        ? (
-            parsed.document.nodes.find(
-              (node) => node.type === 'heading' && node.text.trim() === sourceText.trim()
-            ) as Extract<AstNode, { type: 'heading' }>
-          ).line
-        : ((
-            parsed.document.nodes.find((node) =>
-              collectNodeTexts(node).some((text) => text.trim() === sourceText.trim())
-            ) as Exclude<AstNode, { type: 'heading' }> | undefined
-          )?.startLine ?? 1);
+    const sourceLine = interaction.sourceLine;
     pushTrace(sourceLine, `${interactionPath}.id`, String(interaction.id ?? ''));
     pushTrace(sourceLine, `${interactionPath}.event`, String(interaction.event ?? ''));
     pushTrace(
