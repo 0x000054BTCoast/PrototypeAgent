@@ -1,0 +1,129 @@
+{
+  "routes": [
+    {
+      "id": "route_auth_login",
+      "path": "/login",
+      "name": "auth_login",
+      "view": "view_auth_login"
+    }
+  ],
+  "views": [
+    {
+      "id": "view_auth_login",
+      "title": "登录页",
+      "layout": {
+        "type": "grid",
+        "columns": 24,
+        "gap": 16
+      },
+      "rootComponentIds": ["cmp_login_root"]
+    }
+  ],
+  "components": [
+    {
+      "id": "cmp_login_root",
+      "type": "container",
+      "props": {
+        "direction": "vertical",
+        "gap": 12
+      },
+      "children": ["cmp_login_form", "cmp_login_submit"]
+    },
+    {
+      "id": "cmp_login_form",
+      "type": "form",
+      "props": {
+        "title": "欢迎登录"
+      },
+      "children": ["cmp_login_email", "cmp_login_password"]
+    },
+    {
+      "id": "cmp_login_email",
+      "type": "input",
+      "props": {
+        "placeholder": "邮箱"
+      }
+    },
+    {
+      "id": "cmp_login_password",
+      "type": "input",
+      "props": {
+        "placeholder": "密码",
+        "inputType": "password"
+      }
+    },
+    {
+      "id": "cmp_login_submit",
+      "type": "button",
+      "props": {
+        "label": "登录"
+      }
+    }
+  ],
+  "data": {
+    "entities": [
+      {
+        "id": "session",
+        "shape": {
+          "userId": "string",
+          "role": "string"
+        }
+      }
+    ],
+    "queries": [
+      {
+        "id": "q_login",
+        "source": "rest",
+        "endpoint": "/api/auth/login",
+        "method": "POST"
+      }
+    ],
+    "states": [
+      {
+        "id": "authError",
+        "type": "string",
+        "initial": ""
+      }
+    ]
+  },
+  "actions": [
+    {
+      "id": "act_login_submit",
+      "trigger": {
+        "type": "click",
+        "componentId": "cmp_login_submit"
+      },
+      "effects": [
+        {
+          "type": "run_query",
+          "queryId": "q_login"
+        }
+      ]
+    }
+  ],
+  "design": {
+    "theme": "light",
+    "tokens": {
+      "colorPrimary": "#2563eb",
+      "radiusMd": 8,
+      "spacingUnit": 4
+    },
+    "breakpoints": {
+      "sm": 640,
+      "md": 768,
+      "lg": 1024
+    }
+  },
+  "constraints": [
+    {
+      "kind": "a11y",
+      "rule": "interactive_requires_label",
+      "level": "error"
+    },
+    {
+      "kind": "performance",
+      "rule": "first_screen_components_under_30",
+      "level": "warn"
+    }
+  ]
+}

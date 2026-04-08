@@ -1,0 +1,121 @@
+{
+  "routes": [
+    {
+      "id": "route_ecommerce",
+      "path": "/shop",
+      "name": "ecommerce",
+      "view": "view_ecommerce"
+    }
+  ],
+  "views": [
+    {
+      "id": "view_ecommerce",
+      "title": "电商商品列表",
+      "layout": {
+        "type": "grid",
+        "columns": 24,
+        "gap": 16
+      },
+      "rootComponentIds": ["cmp_shop_root"]
+    }
+  ],
+  "components": [
+    {
+      "id": "cmp_shop_root",
+      "type": "container",
+      "props": {
+        "direction": "vertical",
+        "gap": 16
+      },
+      "children": ["cmp_category_filter", "cmp_product_table", "cmp_buy_now"]
+    },
+    {
+      "id": "cmp_category_filter",
+      "type": "input",
+      "props": {
+        "placeholder": "筛选分类"
+      }
+    },
+    {
+      "id": "cmp_product_table",
+      "type": "table",
+      "props": {
+        "columns": ["sku", "name", "price", "stock"]
+      }
+    },
+    {
+      "id": "cmp_buy_now",
+      "type": "button",
+      "props": {
+        "label": "立即购买"
+      }
+    }
+  ],
+  "data": {
+    "entities": [
+      {
+        "id": "product",
+        "shape": {
+          "id": "string",
+          "name": "string",
+          "price": "number",
+          "stock": "number"
+        }
+      }
+    ],
+    "queries": [
+      {
+        "id": "q_products",
+        "source": "graphql",
+        "endpoint": "/graphql"
+      }
+    ],
+    "states": [
+      {
+        "id": "selectedCategory",
+        "type": "string",
+        "initial": "all"
+      }
+    ]
+  },
+  "actions": [
+    {
+      "id": "act_buy_now",
+      "trigger": {
+        "type": "click",
+        "componentId": "cmp_buy_now"
+      },
+      "effects": [
+        {
+          "type": "navigate",
+          "to": "/checkout"
+        }
+      ]
+    }
+  ],
+  "design": {
+    "theme": "light",
+    "tokens": {
+      "colorPrimary": "#2563eb",
+      "radiusMd": 8,
+      "spacingUnit": 4
+    },
+    "breakpoints": {
+      "sm": 640,
+      "md": 768,
+      "lg": 1024
+    }
+  },
+  "constraints": [
+    {
+      "kind": "a11y",
+      "rule": "interactive_requires_label",
+      "level": "error"
+    },
+    {
+      "kind": "performance",
+      "rule": "first_screen_components_under_30",
+      "level": "warn"
+    }
+  ]
+}

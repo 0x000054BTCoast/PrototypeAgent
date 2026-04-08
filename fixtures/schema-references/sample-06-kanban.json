@@ -1,0 +1,125 @@
+{
+  "routes": [
+    {
+      "id": "route_kanban",
+      "path": "/projects/kanban",
+      "name": "kanban",
+      "view": "view_kanban"
+    }
+  ],
+  "views": [
+    {
+      "id": "view_kanban",
+      "title": "项目看板",
+      "layout": {
+        "type": "grid",
+        "columns": 24,
+        "gap": 16
+      },
+      "rootComponentIds": ["cmp_kanban_root"]
+    }
+  ],
+  "components": [
+    {
+      "id": "cmp_kanban_root",
+      "type": "container",
+      "props": {
+        "direction": "horizontal",
+        "gap": 16
+      },
+      "children": ["cmp_col_todo", "cmp_col_doing", "cmp_col_done"]
+    },
+    {
+      "id": "cmp_col_todo",
+      "type": "container",
+      "props": {
+        "title": "待办"
+      }
+    },
+    {
+      "id": "cmp_col_doing",
+      "type": "container",
+      "props": {
+        "title": "进行中"
+      }
+    },
+    {
+      "id": "cmp_col_done",
+      "type": "container",
+      "props": {
+        "title": "已完成"
+      }
+    },
+    {
+      "id": "cmp_new_task_btn",
+      "type": "button",
+      "props": {
+        "label": "新建任务"
+      }
+    }
+  ],
+  "data": {
+    "entities": [
+      {
+        "id": "session",
+        "shape": {
+          "userId": "string",
+          "role": "string"
+        }
+      }
+    ],
+    "queries": [
+      {
+        "id": "q_bootstrap",
+        "source": "local"
+      }
+    ],
+    "states": [
+      {
+        "id": "draggingTaskId",
+        "type": "string",
+        "initial": ""
+      }
+    ]
+  },
+  "actions": [
+    {
+      "id": "act_new_task",
+      "trigger": {
+        "type": "click",
+        "componentId": "cmp_new_task_btn"
+      },
+      "effects": [
+        {
+          "type": "navigate",
+          "to": "/projects/new"
+        }
+      ]
+    }
+  ],
+  "design": {
+    "theme": "light",
+    "tokens": {
+      "colorPrimary": "#2563eb",
+      "radiusMd": 8,
+      "spacingUnit": 4
+    },
+    "breakpoints": {
+      "sm": 640,
+      "md": 768,
+      "lg": 1024
+    }
+  },
+  "constraints": [
+    {
+      "kind": "a11y",
+      "rule": "interactive_requires_label",
+      "level": "error"
+    },
+    {
+      "kind": "performance",
+      "rule": "first_screen_components_under_30",
+      "level": "warn"
+    }
+  ]
+}

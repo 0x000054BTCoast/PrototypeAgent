@@ -1,0 +1,135 @@
+{
+  "routes": [
+    {
+      "id": "route_table_heavy",
+      "path": "/data-center",
+      "name": "table_heavy",
+      "view": "view_table_heavy"
+    }
+  ],
+  "views": [
+    {
+      "id": "view_table_heavy",
+      "title": "数据管理中心",
+      "layout": {
+        "type": "grid",
+        "columns": 24,
+        "gap": 16
+      },
+      "rootComponentIds": ["cmp_data_root"]
+    }
+  ],
+  "components": [
+    {
+      "id": "cmp_data_root",
+      "type": "container",
+      "props": {
+        "direction": "vertical",
+        "gap": 10
+      },
+      "children": ["cmp_table_toolbar", "cmp_orders_table", "cmp_refunds_table"]
+    },
+    {
+      "id": "cmp_table_toolbar",
+      "type": "container",
+      "props": {
+        "direction": "horizontal",
+        "gap": 8
+      },
+      "children": ["cmp_export_btn"]
+    },
+    {
+      "id": "cmp_export_btn",
+      "type": "button",
+      "props": {
+        "label": "导出 CSV"
+      }
+    },
+    {
+      "id": "cmp_orders_table",
+      "type": "table",
+      "props": {
+        "columns": ["order_id", "amount", "status", "created_at"]
+      }
+    },
+    {
+      "id": "cmp_refunds_table",
+      "type": "table",
+      "props": {
+        "columns": ["refund_id", "order_id", "reason", "status"]
+      }
+    }
+  ],
+  "data": {
+    "entities": [
+      {
+        "id": "session",
+        "shape": {
+          "userId": "string",
+          "role": "string"
+        }
+      }
+    ],
+    "queries": [
+      {
+        "id": "q_orders",
+        "source": "rest",
+        "endpoint": "/api/orders",
+        "method": "GET"
+      },
+      {
+        "id": "q_refunds",
+        "source": "rest",
+        "endpoint": "/api/refunds",
+        "method": "GET"
+      }
+    ],
+    "states": [
+      {
+        "id": "selectedRows",
+        "type": "array",
+        "initial": []
+      }
+    ]
+  },
+  "actions": [
+    {
+      "id": "act_export_csv",
+      "trigger": {
+        "type": "click",
+        "componentId": "cmp_export_btn"
+      },
+      "effects": [
+        {
+          "type": "emit",
+          "event": "table.export_csv"
+        }
+      ]
+    }
+  ],
+  "design": {
+    "theme": "light",
+    "tokens": {
+      "colorPrimary": "#2563eb",
+      "radiusMd": 8,
+      "spacingUnit": 4
+    },
+    "breakpoints": {
+      "sm": 640,
+      "md": 768,
+      "lg": 1024
+    }
+  },
+  "constraints": [
+    {
+      "kind": "a11y",
+      "rule": "interactive_requires_label",
+      "level": "error"
+    },
+    {
+      "kind": "performance",
+      "rule": "first_screen_components_under_30",
+      "level": "warn"
+    }
+  ]
+}
