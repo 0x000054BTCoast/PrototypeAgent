@@ -9,6 +9,13 @@ export const PIPELINE_ERROR_CODES = {
     validateFailed: 'SCHEMA_VALIDATE_FAILED',
     versionUnsupported: 'SCHEMA_VERSION_UNSUPPORTED'
   },
+  llm: {
+    providerFailed: 'LLM_PROVIDER_FAILED',
+    allProvidersFailed: 'LLM_ALL_PROVIDERS_FAILED',
+    jsonParseFailed: 'LLM_JSON_PARSE_FAILED',
+    schemaValidateFailed: 'LLM_SCHEMA_VALIDATE_FAILED',
+    transformToUiSchemaFailed: 'LLM_TRANSFORM_TO_UISCHEMA_FAILED'
+  },
   codegen: {
     uiGenerationFailed: 'CODEGEN_UI_GENERATION_FAILED',
     svgExportFailed: 'CODEGEN_SVG_EXPORT_FAILED',
@@ -21,8 +28,9 @@ export const PIPELINE_ERROR_CODES = {
   }
 } as const;
 
-export type PipelineErrorCode =
-  (typeof PIPELINE_ERROR_CODES)[keyof typeof PIPELINE_ERROR_CODES][keyof (typeof PIPELINE_ERROR_CODES)[keyof typeof PIPELINE_ERROR_CODES]];
+type ValueOf<T> = T[keyof T];
+
+export type PipelineErrorCode = ValueOf<ValueOf<typeof PIPELINE_ERROR_CODES>>;
 
 export class PipelineError extends Error {
   readonly code: PipelineErrorCode;

@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 2,
+  "page_name": "analytics_workbench",
+  "intent": "dashboard",
+  "layout": {
+    "type": "grid",
+    "columns": 24
+  },
+  "sections": [
+    {
+      "id": "section_1",
+      "name": "analytics_workbench",
+      "position": "center",
+      "components": []
+    },
+    {
+      "id": "section_2",
+      "name": "kpi_区域",
+      "position": "center",
+      "components": [
+        {
+          "id": "component_1",
+          "type": "card",
+          "props": {
+            "title": "展示核心指标卡片"
+          },
+          "style": {},
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "section_3",
+      "name": "趋势分析",
+      "position": "center",
+      "components": [
+        {
+          "id": "component_2",
+          "type": "chart",
+          "props": {
+            "title": "最近30天收入趋势图"
+          },
+          "style": {},
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "section_4",
+      "name": "操作区",
+      "position": "center",
+      "components": [
+        {
+          "id": "component_3",
+          "type": "button",
+          "props": {
+            "label": "点击导出按钮后下载报表"
+          },
+          "style": {},
+          "children": []
+        }
+      ]
+    }
+  ],
+  "interactions": [
+    {
+      "id": "interaction_1",
+      "sectionId": "section_4",
+      "event": "click",
+      "triggerCondition": "点击导出按钮后下载报表",
+      "targetAction": "update",
+      "componentId": "component_3",
+      "sourceText": "点击导出按钮后下载报表",
+      "sourceLine": 13
+    }
+  ]
+}
