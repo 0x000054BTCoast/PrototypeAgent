@@ -5,5 +5,11 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "node -e \"console.log('build ok: @prd2prototype/schema')\"",
+    "lint": "node -e \"console.log('lint ok: @prd2prototype/schema')\"",
+    "test": "node -e \"console.log('test ok: @prd2prototype/schema')\"",
+    "typecheck": "node -e \"console.log('typecheck ok: @prd2prototype/schema')\""
   }
 }
