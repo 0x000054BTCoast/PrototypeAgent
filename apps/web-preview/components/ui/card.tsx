@@ -1,5 +1,10 @@
-import * as React from "react";
+import * as React from 'react';
 
-export function Card({ className = "", ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={`rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 ${className}`} {...props} />;
+export function Card({ className = '', ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div
+      className={`rounded-xl border border-border bg-surface shadow-sm ${className}`}
+      {...props}
+    />
+  );
 }
