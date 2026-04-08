@@ -1,7 +1,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { performance } from 'node:perf_hooks';
-import { migrateUISchemaToAppSchemaV2, type UISchema } from '../../schema/src/index.js';
+import {
+  migrateUISchemaToAppSchemaV2,
+  normalizeAndValidateUISchemaVersion,
+  type UISchema
+} from '../../schema/src/index.js';
 import { parsePrdToSchema } from '../../parser/src/index.js';
 import { generateFrontend } from '../../codegen/src/json-to-ui.js';
 import { exportHtml, exportSvg } from '../../codegen/src/exporters.js';
@@ -105,7 +109,20 @@ try {
       const raw = fs.readFileSync(path.resolve(outputDir, 'structure.json'), 'utf8');
       const parsed = JSON.parse(raw) as Partial<UISchema>;
 
-      const hasSections = Array.isArray(parsed.sections);
+      let versionChecked: UISchema;
+      try {
+        versionChecked = normalizeAndValidateUISchemaVersion(parsed).schema;
+      } catch (error) {
+        throw new PipelineError(
+          PIPELINE_ERROR_CODES.schema.versionUnsupported,
+          `[${PIPELINE_ERROR_CODES.schema.versionUnsupported}] ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+          error
+        );
+      }
+
+      const hasSections = Array.isArray(versionChecked.sections);
       if (!hasSections) {
         throw new PipelineError(
           PIPELINE_ERROR_CODES.schema.validateFailed,
@@ -113,7 +130,7 @@ try {
         );
       }
 
-      return parsed as UISchema;
+      return versionChecked;
     }
   );
 

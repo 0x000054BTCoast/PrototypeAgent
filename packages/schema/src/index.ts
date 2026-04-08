@@ -18,6 +18,7 @@ export interface UISection {
 }
 
 export interface UISchema {
+  schemaVersion: number;
   page_name: string;
   layout: {
     type: 'grid';
@@ -25,6 +26,21 @@ export interface UISchema {
   };
   sections: UISection[];
   interactions: Array<Record<string, unknown>>;
+}
+
+export const CURRENT_UI_SCHEMA_VERSION = 2 as const;
+export const MINIMUM_SUPPORTED_UI_SCHEMA_VERSION = 1 as const;
+
+export interface UISchemaVersionIssue {
+  code: 'missing_schema_version' | 'invalid_schema_version' | 'unsupported_schema_version';
+  message: string;
+}
+
+export interface UISchemaVersionValidationResult {
+  schema: UISchema;
+  sourceVersion: number;
+  upgraded: boolean;
+  issue?: UISchemaVersionIssue;
 }
 
 /**
@@ -655,6 +671,63 @@ export function assertValidAppSchemaV2(input: unknown): AppSchemaV2 {
 
   const detail = result.error.issues.map((item) => `- ${item.path}: ${item.message}`).join('\n');
   throw new Error(`${result.error.summary}\n${detail}`);
+}
+
+export function normalizeAndValidateUISchemaVersion(
+  input: Partial<UISchema>
+): UISchemaVersionValidationResult {
+  const rawVersion = input.schemaVersion;
+  const isMissingVersion = typeof rawVersion === 'undefined';
+
+  if (isMissingVersion) {
+    return {
+      schema: {
+        ...input,
+        schemaVersion: CURRENT_UI_SCHEMA_VERSION
+      } as UISchema,
+      sourceVersion: 1,
+      upgraded: true,
+      issue: {
+        code: 'missing_schema_version',
+        message: `检测到 legacy UISchema（未声明 schemaVersion），已按 v1 升级到 v${CURRENT_UI_SCHEMA_VERSION}`
+      }
+    };
+  }
+
+  if (!Number.isInteger(rawVersion) || rawVersion <= 0) {
+    throw new Error(
+      `无效的 schemaVersion: ${String(rawVersion)}。仅支持整数版本 ${MINIMUM_SUPPORTED_UI_SCHEMA_VERSION} ~ ${CURRENT_UI_SCHEMA_VERSION}`
+    );
+  }
+
+  if (rawVersion < MINIMUM_SUPPORTED_UI_SCHEMA_VERSION) {
+    throw new Error(
+      `不支持的 schemaVersion: v${rawVersion}。最低支持 v${MINIMUM_SUPPORTED_UI_SCHEMA_VERSION}，请先升级后再执行。`
+    );
+  }
+
+  if (rawVersion > CURRENT_UI_SCHEMA_VERSION) {
+    throw new Error(
+      `不支持的 schemaVersion: v${rawVersion}。当前运行时仅支持到 v${CURRENT_UI_SCHEMA_VERSION}，请升级工具链后重试。`
+    );
+  }
+
+  if (rawVersion < CURRENT_UI_SCHEMA_VERSION) {
+    return {
+      schema: {
+        ...input,
+        schemaVersion: CURRENT_UI_SCHEMA_VERSION
+      } as UISchema,
+      sourceVersion: rawVersion,
+      upgraded: true
+    };
+  }
+
+  return {
+    schema: input as UISchema,
+    sourceVersion: rawVersion,
+    upgraded: false
+  };
 }
 
 const toRoutePath = (pageName: string): string => {
