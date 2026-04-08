@@ -1,22 +1,23 @@
 export const PIPELINE_ERROR_CODES = {
   parser: {
-    readInputFailed: "PARSER_READ_INPUT_FAILED",
-    parseFailed: "PARSER_PARSE_FAILED"
+    readInputFailed: 'PARSER_READ_INPUT_FAILED',
+    parseFailed: 'PARSER_PARSE_FAILED'
   },
   schema: {
-    serializeFailed: "SCHEMA_SERIALIZE_FAILED",
-    deserializeFailed: "SCHEMA_DESERIALIZE_FAILED",
-    validateFailed: "SCHEMA_VALIDATE_FAILED"
+    serializeFailed: 'SCHEMA_SERIALIZE_FAILED',
+    deserializeFailed: 'SCHEMA_DESERIALIZE_FAILED',
+    validateFailed: 'SCHEMA_VALIDATE_FAILED',
+    versionUnsupported: 'SCHEMA_VERSION_UNSUPPORTED'
   },
   codegen: {
-    uiGenerationFailed: "CODEGEN_UI_GENERATION_FAILED",
-    svgExportFailed: "CODEGEN_SVG_EXPORT_FAILED",
-    htmlExportFailed: "CODEGEN_HTML_EXPORT_FAILED"
+    uiGenerationFailed: 'CODEGEN_UI_GENERATION_FAILED',
+    svgExportFailed: 'CODEGEN_SVG_EXPORT_FAILED',
+    htmlExportFailed: 'CODEGEN_HTML_EXPORT_FAILED'
   },
   qa: {
-    outputMissing: "QA_OUTPUT_MISSING",
-    stageRetryExhausted: "QA_STAGE_RETRY_EXHAUSTED",
-    executionFailed: "QA_PIPELINE_EXECUTION_FAILED"
+    outputMissing: 'QA_OUTPUT_MISSING',
+    stageRetryExhausted: 'QA_STAGE_RETRY_EXHAUSTED',
+    executionFailed: 'QA_PIPELINE_EXECUTION_FAILED'
   }
 } as const;
 
@@ -30,7 +31,7 @@ export class PipelineError extends Error {
 
   constructor(code: PipelineErrorCode, message: string, cause?: unknown) {
     super(message);
-    this.name = "PipelineError";
+    this.name = 'PipelineError';
     this.code = code;
     this.cause = cause;
   }
