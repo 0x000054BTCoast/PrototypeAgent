@@ -19,11 +19,47 @@ type Report = {
   maxRetries: number;
   attemptsUsed: number;
   success: boolean;
+  gate: GateEvaluation;
+  attemptMetrics: AttemptMetrics[];
   steps: StepResult[];
+};
+
+type AttemptMetrics = {
+  attempt: number;
+  successRate: number;
+  durationMs: number;
+  errorDistribution: Record<string, number>;
+  editableStabilityRate: number;
+  baselineScore: number;
+};
+
+type GateThresholds = {
+  minSuccessRate: number;
+  minEditableStabilityRate: number;
+  minBaselineScore: number;
+  maxDurationMs: number;
+};
+
+type GateEvaluation = {
+  pass: boolean;
+  thresholds: GateThresholds;
+  measuredOnAttempt: number;
+  measured: {
+    successRate: number;
+    editableStabilityRate: number;
+    baselineScore: number;
+    durationMs: number;
+  };
 };
 
 const args = process.argv.slice(2);
 const maxRetries = Number.parseInt(readArg('--max-retries') ?? '2', 10);
+const thresholds: GateThresholds = {
+  minSuccessRate: parseRatio('--min-success-rate', 0.95),
+  minEditableStabilityRate: parseRatio('--min-editable-stability-rate', 0.95),
+  minBaselineScore: parseRatio('--min-baseline-score', 0.9),
+  maxDurationMs: parsePositiveInt('--max-duration-ms', 180_000)
+};
 
 if (!Number.isFinite(maxRetries) || maxRetries < 0) {
   console.error('Invalid --max-retries value. It must be a non-negative integer.');
@@ -33,6 +69,7 @@ if (!Number.isFinite(maxRetries) || maxRetries < 0) {
 const steps: StepResult[] = [];
 let success = false;
 let attemptsUsed = 0;
+const attemptMetrics: AttemptMetrics[] = [];
 
 for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
   attemptsUsed = attempt + 1;
@@ -75,6 +112,14 @@ for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
   const screenshotDiff = runScreenshotDiff(attempt);
   steps.push(screenshotDiff);
 
+  const metrics = computeAttemptMetrics(
+    attempt,
+    [generation, typecheck, lint, build, smoke, screenshotDiff],
+    thresholds.maxDurationMs
+  );
+  attemptMetrics.push(metrics);
+  printAttemptMetrics(metrics);
+
   const blockingFailed =
     [generation, typecheck, lint, build, smoke].some((it) => it.status === 'fail') ||
     screenshotDiff.status === 'fail';
@@ -93,11 +138,16 @@ for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
   runBestEffort('pnpm format');
 }
 
+const gate = evaluateGate(attemptMetrics, thresholds);
+success = success && gate.pass;
+
 const report: Report = {
   generatedAt: new Date().toISOString(),
   maxRetries,
   attemptsUsed,
   success,
+  gate,
+  attemptMetrics,
   steps
 };
 
@@ -120,6 +170,32 @@ function readArg(flag: string): string | undefined {
   return args[idx + 1];
 }
 
+function parseRatio(flag: string, fallback: number): number {
+  const raw = readArg(flag);
+  if (raw === undefined) {
+    return fallback;
+  }
+  const parsed = Number.parseFloat(raw);
+  if (!Number.isFinite(parsed) || parsed < 0 || parsed > 1) {
+    console.error(`Invalid ${flag} value. It must be between 0 and 1.`);
+    process.exit(1);
+  }
+  return parsed;
+}
+
+function parsePositiveInt(flag: string, fallback: number): number {
+  const raw = readArg(flag);
+  if (raw === undefined) {
+    return fallback;
+  }
+  const parsed = Number.parseInt(raw, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    console.error(`Invalid ${flag} value. It must be a positive integer.`);
+    process.exit(1);
+  }
+  return parsed;
+}
+
 function runStep(input: { name: string; command: string; attempt: number }): StepResult {
   const startedAt = Date.now();
   const result = spawnSync(input.command, { shell: true, stdio: 'inherit' });
@@ -133,6 +209,84 @@ function runStep(input: { name: string; command: string; attempt: number }): Ste
     status: result.status === 0 ? 'pass' : 'fail',
     details: result.status === 0 ? undefined : `exit code ${result.status ?? 'unknown'}`
   };
+}
+
+function computeAttemptMetrics(
+  attempt: number,
+  stepResults: StepResult[],
+  maxDurationMs: number
+): AttemptMetrics {
+  const blockingSteps = stepResults.filter((step) => step.status !== 'warning');
+  const blockingPassCount = blockingSteps.filter((step) => step.status === 'pass').length;
+  const successRate = blockingSteps.length ? blockingPassCount / blockingSteps.length : 0;
+
+  const editableStepNames = ['typecheck', 'lint', 'build'];
+  const editableSteps = stepResults.filter((step) => editableStepNames.includes(step.name));
+  const editablePassCount = editableSteps.filter((step) => step.status === 'pass').length;
+  const editableStabilityRate = editableSteps.length ? editablePassCount / editableSteps.length : 0;
+
+  const durationMs = stepResults.reduce((sum, step) => sum + step.durationMs, 0);
+  const durationScore = maxDurationMs > 0 ? Math.max(0, 1 - durationMs / maxDurationMs) : 0;
+  const baselineScore = Number(
+    (successRate * 0.4 + editableStabilityRate * 0.4 + durationScore * 0.2).toFixed(4)
+  );
+
+  const errorDistribution: Record<string, number> = {};
+  for (const step of stepResults) {
+    if (step.status === 'fail') {
+      errorDistribution[step.name] = (errorDistribution[step.name] ?? 0) + 1;
+    }
+  }
+
+  return {
+    attempt: attempt + 1,
+    successRate: Number(successRate.toFixed(4)),
+    durationMs,
+    errorDistribution,
+    editableStabilityRate: Number(editableStabilityRate.toFixed(4)),
+    baselineScore
+  };
+}
+
+function evaluateGate(metrics: AttemptMetrics[], thresholds: GateThresholds): GateEvaluation {
+  if (metrics.length === 0) {
+    return {
+      pass: false,
+      thresholds,
+      measuredOnAttempt: 0,
+      measured: { successRate: 0, editableStabilityRate: 0, baselineScore: 0, durationMs: 0 }
+    };
+  }
+
+  const best = metrics.reduce((prev, current) =>
+    current.baselineScore > prev.baselineScore ? current : prev
+  );
+  const pass =
+    best.successRate >= thresholds.minSuccessRate &&
+    best.editableStabilityRate >= thresholds.minEditableStabilityRate &&
+    best.baselineScore >= thresholds.minBaselineScore &&
+    best.durationMs <= thresholds.maxDurationMs;
+
+  return {
+    pass,
+    thresholds,
+    measuredOnAttempt: best.attempt,
+    measured: {
+      successRate: best.successRate,
+      editableStabilityRate: best.editableStabilityRate,
+      baselineScore: best.baselineScore,
+      durationMs: best.durationMs
+    }
+  };
+}
+
+function printAttemptMetrics(metrics: AttemptMetrics): void {
+  console.log(
+    `[quality-gate][attempt ${metrics.attempt}] success_rate=${metrics.successRate.toFixed(2)} ` +
+      `duration_ms=${metrics.durationMs} editable_stability_rate=${metrics.editableStabilityRate.toFixed(2)} ` +
+      `baseline_score=${metrics.baselineScore.toFixed(2)} ` +
+      `errors=${JSON.stringify(metrics.errorDistribution)}`
+  );
 }
 
 function runBestEffort(command: string): void {
@@ -250,6 +404,25 @@ function renderMarkdown(report: Report): string {
     `- maxRetries: ${report.maxRetries}`,
     `- attemptsUsed: ${report.attemptsUsed}`,
     `- success: ${report.success ? 'PASS' : 'FAIL'}`,
+    `- gate: ${report.gate.pass ? 'PASS' : 'FAIL'} (attempt ${report.gate.measuredOnAttempt})`,
+    '',
+    '## Gate Thresholds',
+    '',
+    `- minSuccessRate: ${report.gate.thresholds.minSuccessRate}`,
+    `- minEditableStabilityRate: ${report.gate.thresholds.minEditableStabilityRate}`,
+    `- minBaselineScore: ${report.gate.thresholds.minBaselineScore}`,
+    `- maxDurationMs: ${report.gate.thresholds.maxDurationMs}`,
+    '',
+    '## Attempt Metrics',
+    '',
+    '| attempt | success_rate | duration(ms) | editable_stability_rate | baseline_score | error_distribution |',
+    '|---:|---:|---:|---:|---:|---|',
+    ...report.attemptMetrics.map(
+      (metric) =>
+        `| ${metric.attempt} | ${metric.successRate.toFixed(4)} | ${metric.durationMs} | ${metric.editableStabilityRate.toFixed(4)} | ${metric.baselineScore.toFixed(4)} | \`${JSON.stringify(metric.errorDistribution)}\` |`
+    ),
+    '',
+    '## Step Results',
     '',
     '| step | attempt | status | duration(ms) | command | details |',
     '|---|---:|---|---:|---|---|'

@@ -24,7 +24,8 @@
     "eval:parser": "tsx scripts/parser-eval.ts",
     "dag": "tsx scripts/generate-dag.ts",
     "quality:gate": "tsx scripts/quality-gate.ts",
-    "quality:gate:strict": "tsx scripts/quality-gate.ts --max-retries 3"
+    "quality:gate:strict": "tsx scripts/quality-gate.ts --max-retries 3",
+    "quality:gate:ci": "tsx scripts/quality-gate.ts --max-retries 1 --min-success-rate 0.95 --min-editable-stability-rate 0.95 --min-baseline-score 0.9 --max-duration-ms 180000"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.1.0",
