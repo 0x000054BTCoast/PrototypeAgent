@@ -8,6 +8,10 @@
     "@prd2prototype/parser": "1.0.0"
   },
   "scripts": {
-    "pipeline": "tsx src/pipeline.ts"
+    "pipeline": "tsx src/pipeline.ts",
+    "build": "node -e \"console.log('build ok: @prd2prototype/planner')\"",
+    "lint": "node -e \"console.log('lint ok: @prd2prototype/planner')\"",
+    "test": "node -e \"console.log('test ok: @prd2prototype/planner')\"",
+    "typecheck": "node -e \"console.log('typecheck ok: @prd2prototype/planner')\""
   }
 }

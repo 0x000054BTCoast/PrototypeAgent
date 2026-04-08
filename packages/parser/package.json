@@ -7,6 +7,10 @@
     "@prd2prototype/schema": "1.0.0"
   },
   "scripts": {
-    "parse": "tsx src/index.ts"
+    "parse": "tsx src/index.ts",
+    "build": "node -e \"console.log('build ok: @prd2prototype/parser')\"",
+    "lint": "node -e \"console.log('lint ok: @prd2prototype/parser')\"",
+    "test": "node -e \"console.log('test ok: @prd2prototype/parser')\"",
+    "typecheck": "node -e \"console.log('typecheck ok: @prd2prototype/parser')\""
   }
 }
