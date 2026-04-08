@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@prd2prototype/codegen": "1.0.0",
-    "@prd2prototype/parser": "1.0.0"
+    "@prd2prototype/codegen": "workspace:*",
+    "@prd2prototype/parser": "workspace:*"
   },
   "scripts": {
     "pipeline": "tsx src/pipeline.ts",
