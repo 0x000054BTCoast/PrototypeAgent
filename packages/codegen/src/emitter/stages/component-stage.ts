@@ -1,0 +1,21 @@
+import type { StageEmitter } from '../types.js';
+import { defaultComponentTemplates } from '../templates/components/default-components.js';
+import { emitRenderSchemaComponent } from '../templates/components/render-schema.js';
+
+export const componentStageEmitter: StageEmitter = {
+  name: 'component',
+  emit: () => {
+    const componentArtifacts = defaultComponentTemplates.map((component) => ({
+      path: `components/ui/${component.type === 'chart' ? 'chart-placeholder' : component.type === 'table' ? 'data-table' : component.type}.tsx`,
+      content: component.source
+    }));
+
+    return [
+      {
+        path: 'components/render-schema.tsx',
+        content: emitRenderSchemaComponent(defaultComponentTemplates)
+      },
+      ...componentArtifacts
+    ];
+  }
+};
