@@ -85,17 +85,164 @@ export type ParsedPrdAst = {
   sections: SectionAst[];
 };
 
-const inferComponent = (content: string, index: number): UIComponent => {
+type InferComponentContext = {
+  sectionName: string;
+  nodeType: AstNode['type'];
+};
+
+type ComponentType = UIComponent['type'];
+
+const COMPONENT_KEYWORDS: Record<ComponentType, readonly string[]> = {
+  chart: [
+    'chart',
+    'graph',
+    'trend',
+    'funnel',
+    'histogram',
+    'line chart',
+    'bar chart',
+    'pie chart',
+    'dashboard',
+    '图表',
+    '趋势',
+    '漏斗',
+    '柱状图',
+    '折线图',
+    '饼图',
+    '可视化',
+    '看板'
+  ],
+  table: [
+    'table',
+    'grid',
+    'rows',
+    'columns',
+    'list view',
+    'data table',
+    'table view',
+    '列表',
+    '表格',
+    '数据表',
+    '清单',
+    '明细',
+    '行',
+    '列'
+  ],
+  button: [
+    'button',
+    'cta',
+    'click',
+    'submit',
+    'save',
+    'confirm',
+    'cancel',
+    'export',
+    'download',
+    'btn',
+    '按钮',
+    '点击',
+    '提交',
+    '保存',
+    '确认',
+    '取消',
+    '导出',
+    '下载'
+  ],
+  card: [
+    'card',
+    'panel',
+    'tile',
+    'widget',
+    'summary',
+    'kpi',
+    'stat',
+    '卡片',
+    '面板',
+    '指标',
+    '摘要',
+    '统计'
+  ],
+  text: []
+};
+
+const REGEX_RULES: Array<{ type: Exclude<ComponentType, 'text'>; pattern: RegExp; score: number }> =
+  [
+    { type: 'chart', pattern: /\b(line|bar|pie|area|radar)\s+chart\b/i, score: 5 },
+    { type: 'chart', pattern: /(折线图|柱状图|饼图|趋势图|漏斗图)/i, score: 5 },
+    { type: 'table', pattern: /\b(data\s+)?table\b/i, score: 5 },
+    { type: 'table', pattern: /(数据表|表格|列表|明细表)/i, score: 5 },
+    {
+      type: 'button',
+      pattern: /\b(click|tap|submit|save|confirm|cancel|export|download)\b/i,
+      score: 4
+    },
+    { type: 'button', pattern: /(点击|提交|保存|确认|取消|导出|下载)/i, score: 4 },
+    { type: 'card', pattern: /\b(kpi|summary|metric)\b/i, score: 4 },
+    { type: 'card', pattern: /(指标卡|摘要卡|统计卡|卡片)/i, score: 4 }
+  ];
+
+const scoreByKeywords = (text: string, keywords: readonly string[]): number =>
+  keywords.reduce((score, keyword) => {
+    if (!keyword) return score;
+    if (text.includes(keyword)) {
+      return score + (keyword.includes(' ') ? 3 : 2);
+    }
+    return score;
+  }, 0);
+
+const inferComponent = (
+  content: string,
+  index: number,
+  context: InferComponentContext
+): UIComponent => {
   const text = content.toLowerCase();
+  const section = context.sectionName.toLowerCase();
   const id = `component_${index}`;
 
-  if (text.includes('chart')) {
-    return { id, type: 'chart', props: { title: content.trim() }, style: {}, children: [] };
+  const scores: Record<ComponentType, number> = {
+    chart: scoreByKeywords(text, COMPONENT_KEYWORDS.chart),
+    table: scoreByKeywords(text, COMPONENT_KEYWORDS.table),
+    button: scoreByKeywords(text, COMPONENT_KEYWORDS.button),
+    card: scoreByKeywords(text, COMPONENT_KEYWORDS.card),
+    text: 0
+  };
+
+  for (const rule of REGEX_RULES) {
+    if (rule.pattern.test(content)) {
+      scores[rule.type] += rule.score;
+    }
   }
-  if (text.includes('table')) {
-    return { id, type: 'table', props: { title: content.trim() }, style: {}, children: [] };
+
+  // 上下文增强：章节名与节点类型共同影响组件判断。
+  scores.chart += scoreByKeywords(section, COMPONENT_KEYWORDS.chart);
+  scores.table += scoreByKeywords(section, COMPONENT_KEYWORDS.table);
+  scores.button += scoreByKeywords(section, COMPONENT_KEYWORDS.button);
+  scores.card += scoreByKeywords(section, COMPONENT_KEYWORDS.card);
+
+  if (context.nodeType === 'list') {
+    scores.button += 1;
+    scores.card += 1;
+  } else if (context.nodeType === 'narrative') {
+    scores.chart += 1;
+    scores.table += 1;
   }
-  if (text.includes('button')) {
+
+  const bestMatch = (['chart', 'table', 'button', 'card'] as const).reduce(
+    (best, current) => (scores[current] > scores[best] ? current : best),
+    'chart'
+  );
+
+  if (scores[bestMatch] <= 0) {
+    return {
+      id,
+      type: 'text',
+      props: { content: content.trim() },
+      style: {},
+      children: []
+    };
+  }
+
+  if (bestMatch === 'button') {
     return {
       id,
       type: 'button',
@@ -104,14 +251,15 @@ const inferComponent = (content: string, index: number): UIComponent => {
       children: []
     };
   }
-  if (text.includes('card')) {
+
+  if (bestMatch === 'card') {
     return { id, type: 'card', props: { title: content.trim() }, style: {}, children: [] };
   }
 
   return {
     id,
-    type: 'text',
-    props: { content: content.trim() },
+    type: bestMatch,
+    props: { title: content.trim() },
     style: {},
     children: []
   };
@@ -383,7 +531,12 @@ export const parsePrdToSchema = (markdown: string): UISchema => {
       for (const text of texts) {
         if (!text.trim()) continue;
         componentIndex += 1;
-        components.push(inferComponent(text, componentIndex));
+        components.push(
+          inferComponent(text, componentIndex, {
+            sectionName: section.name,
+            nodeType: node.type
+          })
+        );
       }
     }
 
