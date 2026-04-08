@@ -91,6 +91,7 @@ type InferComponentContext = {
 };
 
 type ComponentType = UIComponent['type'];
+type ParsedInteraction = Record<string, unknown>;
 
 const COMPONENT_KEYWORDS: Record<ComponentType, readonly string[]> = {
   chart: [
@@ -519,6 +520,100 @@ const collectNodeTexts = (node: AstNode): string[] => {
   return [node.text];
 };
 
+const EVENT_PATTERNS: Array<{ type: string; pattern: RegExp }> = [
+  { type: 'click', pattern: /\b(click|tap|press)\b/i },
+  { type: 'submit', pattern: /\b(submit|save|confirm)\b/i },
+  { type: 'filter', pattern: /\b(filter|search|query)\b/i },
+  { type: 'navigate', pattern: /\b(navigate|jump|redirect|go to|open)\b/i },
+  { type: 'click', pattern: /(点击|点按|按下)/ },
+  { type: 'submit', pattern: /(提交|保存|确认)/ },
+  { type: 'filter', pattern: /(筛选|过滤|查询|搜索)/ },
+  { type: 'navigate', pattern: /(跳转|进入|打开|前往)/ }
+];
+
+const CONDITION_PATTERNS: RegExp[] = [
+  /\b(if|when|after|once|on)\b[^,.，。;；]*/i,
+  /(如果|当|在.+后|满足.+时|选择.+后|点击.+后)[^,.，。;；]*/
+];
+
+const ACTION_PATTERNS: Array<{ action: string; pattern: RegExp }> = [
+  { action: 'navigate', pattern: /\b(navigate|jump|redirect|go to|open)\b/i },
+  { action: 'submit', pattern: /\b(submit|save|confirm)\b/i },
+  { action: 'filter', pattern: /\b(filter|search|query)\b/i },
+  { action: 'navigate', pattern: /(跳转|进入|打开|前往)/ },
+  { action: 'submit', pattern: /(提交|保存|确认)/ },
+  { action: 'filter', pattern: /(筛选|过滤|查询|搜索)/ }
+];
+
+const inferInteractionComponent = (
+  components: UIComponent[],
+  eventType: string
+): UIComponent | undefined => {
+  const button = components.find((component) => component.type === 'button');
+  const table = components.find((component) => component.type === 'table');
+
+  if (eventType === 'submit' || eventType === 'click') return button ?? components[0];
+  if (eventType === 'filter') return table ?? button ?? components[0];
+  return components[0];
+};
+
+const parseInteractionFromText = (
+  text: string,
+  sectionId: string,
+  components: UIComponent[],
+  interactionIndex: number
+): ParsedInteraction | null => {
+  const event = EVENT_PATTERNS.find((rule) => rule.pattern.test(text));
+  const targetAction = ACTION_PATTERNS.find((rule) => rule.pattern.test(text));
+  const condition = CONDITION_PATTERNS.map((pattern) => text.match(pattern)?.[0]?.trim()).find(
+    Boolean
+  );
+
+  if (!event && !targetAction && !condition) return null;
+
+  const normalizedEvent = event?.type ?? 'change';
+  const normalizedAction =
+    targetAction?.action ?? (normalizedEvent === 'navigate' ? 'navigate' : 'update');
+  const component = inferInteractionComponent(components, normalizedEvent);
+
+  return {
+    id: `interaction_${interactionIndex}`,
+    sectionId,
+    event: normalizedEvent,
+    triggerCondition: condition ?? 'always',
+    targetAction: normalizedAction,
+    componentId: component?.id,
+    sourceText: text.trim()
+  };
+};
+
+const inferInteractions = (
+  parsed: ParsedPrdAst,
+  sections: UISchema['sections']
+): ParsedInteraction[] => {
+  const interactions: ParsedInteraction[] = [];
+
+  parsed.sections.forEach((section, sectionIndex) => {
+    const schemaSection = sections[sectionIndex];
+    const sectionId = schemaSection?.id ?? `section_${sectionIndex + 1}`;
+    const components = schemaSection?.components ?? [];
+
+    section.nodes.forEach((node) => {
+      collectNodeTexts(node).forEach((text) => {
+        const interaction = parseInteractionFromText(
+          text,
+          sectionId,
+          components,
+          interactions.length + 1
+        );
+        if (interaction) interactions.push(interaction);
+      });
+    });
+  });
+
+  return interactions;
+};
+
 export const parsePrdToSchema = (markdown: string): UISchema => {
   const parsed = parsePrdToAst(markdown);
   let componentIndex = 0;
@@ -582,7 +677,7 @@ export const parsePrdToSchema = (markdown: string): UISchema => {
     page_name: toSnakeCase(firstHeadingNode?.text ?? 'generated_page') || 'generated_page',
     layout: { type: 'grid', columns: 24 },
     sections,
-    interactions: []
+    interactions: inferInteractions(parsed, sections)
   };
 };
 
