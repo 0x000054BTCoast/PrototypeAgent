@@ -99,6 +99,14 @@ export const applyPatchInstruction = (
   }
 
   if (normalized.includes('add') && normalized.includes('button')) {
+    if (next.sections.length === 0) {
+      next.sections.push({
+        id: 'section_1',
+        name: 'section_1',
+        position: 'center',
+        components: []
+      });
+    }
     const section = next.sections[0];
     const button: UIComponent = {
       id: `component_${section.components.length + 1}`,
