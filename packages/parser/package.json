@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@prd2prototype/schema": "1.0.0"
+    "@prd2prototype/schema": "workspace:*"
   },
   "scripts": {
     "parse": "tsx src/index.ts",
