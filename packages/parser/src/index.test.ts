@@ -56,6 +56,41 @@ Orders overview
     assert.equal(tableSection?.components[0]?.type, 'table');
   });
 
+  it('keeps unicode section names non-empty after normalization', () => {
+    const ast = parsePrdToAst(`# 首页
+
+## 用户列表
+- 展示用户数据
+`);
+
+    assert.equal(ast.sections[0]?.name, '首页');
+    assert.equal(ast.sections[1]?.name, '用户列表');
+  });
+
+  it('keeps mixed zh/en section names stable', () => {
+    const ast = parsePrdToAst(`# Overview
+
+## 用户 User 列表 V2
+- 展示用户数据
+`);
+
+    assert.equal(ast.sections[1]?.name, '用户_user_列表_v2');
+  });
+
+  it('uses section fallback only for symbol-only headings', () => {
+    const ast = parsePrdToAst(`# !!!
+
+## ***???
+- placeholder
+`);
+    const { schema } = astToSchema(ast);
+
+    assert.equal(ast.sections[0]?.name, 'section_1');
+    assert.equal(ast.sections[1]?.name, 'section_2');
+    assert.equal(schema.sections[0]?.name, 'section_1');
+    assert.equal(schema.sections[1]?.name, 'section_2');
+  });
+
   it('infers schema intent and supports configurable override rules', () => {
     const crmSchema = parsePrdToSchema(`# CRM Workspace
 

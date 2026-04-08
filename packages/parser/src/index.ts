@@ -12,8 +12,11 @@ const toSnakeCase = (value: string): string =>
   value
     .trim()
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/[^\p{L}\p{N}]+/gu, '_')
     .replace(/^_+|_+$/g, '');
+
+const resolveSectionName = (rawTitle: string, index: number): string =>
+  toSnakeCase(rawTitle) || `section_${index}`;
 
 type MarkdownToken =
   | {
@@ -573,9 +576,10 @@ export const parseSectionsFromAst = (document: DocumentAst): SectionAst[] => {
 
   for (const node of document.nodes) {
     if (node.type === 'heading' && node.level <= 3) {
+      const sectionIndex = sections.length + 1;
       currentSection = {
-        id: `section_${sections.length + 1}`,
-        name: toSnakeCase(node.text || `section_${sections.length + 1}`),
+        id: `section_${sectionIndex}`,
+        name: resolveSectionName(node.text, sectionIndex),
         headingLevel: node.level,
         headingLine: node.line,
         position: inferPosition(node.text),
@@ -818,7 +822,7 @@ export const astToSchema = (
 
     return {
       id: `section_${sectionIndex + 1}`,
-      name: section.name || `section_${sectionIndex + 1}`,
+      name: resolveSectionName(section.name, sectionIndex + 1),
       position: section.position,
       components
     };
